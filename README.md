@@ -5,7 +5,6 @@
     - TypeScript
 
 - Framework
-    - React
     - Next.js
 
 - State Management
