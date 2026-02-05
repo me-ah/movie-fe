@@ -24,3 +24,8 @@
 - TailwindCSS 설치
 - jotai 설치
 - atoms, hooks, lib 폴더 기본 생성
+- biome 설치 완료
+  - npm run lint
+  - npm run lint:fix
+  - npm run format
+  - 설정 완료

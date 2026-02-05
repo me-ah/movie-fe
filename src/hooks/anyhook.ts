@@ -1,3 +1,1 @@
-
-
-const anyting = "뭔가 할 예정"
+const anyting = "뭔가 할 예정";
