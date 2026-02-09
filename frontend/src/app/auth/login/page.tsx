@@ -72,12 +72,12 @@ export default function Login() {
 						{loading ? "로그인 중..." : "로그인"}
 					</Button>
 				</div>
-
+{/* 
 				<div className="my-6 flex items-center gap-4">
 					<div className="h-px flex-1 bg-zinc-700/70" />
 					<span className="text-xs text-zinc-400">다른 계정으로 로그인</span>
 					<div className="h-px flex-1 bg-zinc-700/70" />
-				</div>
+				</div> */}
 
 				<div className="mt-6 text-center text-sm text-zinc-400">
 					계정이 없으신가요? 바로 가입하세요!{" "}
