@@ -17,6 +17,7 @@ export default function Home() {
 
 			<div className="flex gap-4">
 				<button
+					type="button"
 					className="rounded bg-blue-500 px-6 py-2 text-white hover:bg-blue-600"
 					onClick={() => setCount((c) => c + 1)}
 				>
@@ -24,6 +25,7 @@ export default function Home() {
 				</button>
 
 				<button
+					type="button"
 					className="rounded bg-red-500 px-6 py-2 text-white hover:bg-red-600"
 					onClick={() => setCount((c) => c - 1)}
 				>
