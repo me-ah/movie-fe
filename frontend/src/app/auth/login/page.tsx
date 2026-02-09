@@ -40,10 +40,8 @@ export default function Login() {
 
 	return (
 		<div className="min-h-screen w-full bg-zinc-950 text-zinc-100 flex items-center justify-center p-6">
-			<div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,rgba(255,255,255,0.06),transparent_55%)]" />
-
 			<div className="relative w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-md shadow-[0_10px_40px_rgba(0,0,0,0.6)] p-8">
-				<h1 className="text-center text-2xl font-semibold mb-8">로그인</h1>
+				<h1 className="text-center text-2xl font-semibold mb-8">미아릭스</h1>
 
 				<div className="space-y-4">
 					<Input
@@ -84,7 +82,7 @@ export default function Login() {
 				<div className="mt-6 text-center text-sm text-zinc-400">
 					계정이 없으신가요? 바로 가입하세요!{" "}
 					<Link
-						href="/signup"
+						href="/auth/signup"
 						className="text-blue-400 hover:text-blue-300 underline underline-offset-4"
 					>
 						무료 회원가입

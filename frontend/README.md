@@ -26,6 +26,7 @@
 - atoms, hooks, lib 폴더 기본 생성
 - biome 설치 완료
   - npm run lint
+npm run build
 npm run lint:fix
 npm run format
   - 설정 완료
