@@ -2,15 +2,15 @@
 import api from "@/lib/apiClient";
 
 type LoginResponse = {
-  accessToken: string;
-  refreshToken: string;
+	accessToken: string;
+	refreshToken: string;
 };
 
 export async function login(email: string, password: string) {
-  const res = await api.post<LoginResponse>("/auth/login", {
-    email,
-    password,
-  });
+	const res = await api.post<LoginResponse>("/auth/login", {
+		email,
+		password,
+	});
 
-  return res.data;
+	return res.data;
 }

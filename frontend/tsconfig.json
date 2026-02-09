@@ -2,9 +2,8 @@
 	"compilerOptions": {
 		"target": "ES2017",
 		"lib": ["dom", "dom.iterable", "esnext"],
-		"baseUrl": ".", // ✅ 추가
+		"baseUrl": ".",
 		"paths": {
-			// ✅ 추가
 			"@/*": ["src/*"]
 		},
 		"allowJs": true,

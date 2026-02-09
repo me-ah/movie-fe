@@ -2,6 +2,7 @@
 
 import { useAtom } from "jotai";
 import { countAtom } from "@/atoms/setAtoms";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
 	const [count, setCount] = useAtom(countAtom);
@@ -28,6 +29,8 @@ export default function Home() {
 				>
 					-1
 				</button>
+
+				<Button variant="outline">gdgd</Button>
 			</div>
 		</div>
 	);
