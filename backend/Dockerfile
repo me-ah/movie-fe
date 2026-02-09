@@ -6,9 +6,11 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uv/bin/
 WORKDIR /app
 
 # 시스템 의존성 설치 (PostgreSQL 클라이언트 등)
+# ffmpeg 추가 - 26/02/09 20:12 두진 추가
 RUN apt-get update && apt-get install -y \
     build-essential \
     libpq-dev \
+    ffmpeg \
     && rm -rf /var/lib/apt/lists/*
 
 # 프로젝트 파일 복사

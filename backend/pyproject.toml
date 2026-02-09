@@ -16,6 +16,7 @@ dependencies = [
     "django-redis>=5.4.0",
     "requests>=2.31.0",
     "yt-dlp>=2024.3.10",
+    "python-dotenv>=1.2.1",
 ]
 
 [tool.uv]
