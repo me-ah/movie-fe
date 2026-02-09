@@ -29,3 +29,5 @@
   - npm run lint:fix
   - npm run format
   - 설정 완료
+
+  ## github&gitlab 동시 연결
