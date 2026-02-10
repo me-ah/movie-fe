@@ -7,6 +7,27 @@ User = get_user_model()
 class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True, required=True)
+    
+    # Explicitly set genre fields as optional
+    pref_action = serializers.BooleanField(required=False, default=False)
+    pref_adventure = serializers.BooleanField(required=False, default=False)
+    pref_animation = serializers.BooleanField(required=False, default=False)
+    pref_comedy = serializers.BooleanField(required=False, default=False)
+    pref_crime = serializers.BooleanField(required=False, default=False)
+    pref_documentary = serializers.BooleanField(required=False, default=False)
+    pref_drama = serializers.BooleanField(required=False, default=False)
+    pref_family = serializers.BooleanField(required=False, default=False)
+    pref_fantasy = serializers.BooleanField(required=False, default=False)
+    pref_history = serializers.BooleanField(required=False, default=False)
+    pref_horror = serializers.BooleanField(required=False, default=False)
+    pref_music = serializers.BooleanField(required=False, default=False)
+    pref_mystery = serializers.BooleanField(required=False, default=False)
+    pref_romance = serializers.BooleanField(required=False, default=False)
+    pref_science_fiction = serializers.BooleanField(required=False, default=False)
+    pref_tv_movie = serializers.BooleanField(required=False, default=False)
+    pref_thriller = serializers.BooleanField(required=False, default=False)
+    pref_war = serializers.BooleanField(required=False, default=False)
+    pref_western = serializers.BooleanField(required=False, default=False)
 
     class Meta:
         model = User
@@ -33,7 +54,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
             last_name=validated_data.get('last_name', ''),
             login_type='email'
         )
-        # Set preferences
+        # Set preferences if provided
         for key, value in validated_data.items():
             if key.startswith('pref_'):
                 setattr(user, key, value)
@@ -52,4 +73,3 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 class SocialLoginSerializer(serializers.Serializer):
     access_token = serializers.CharField(required=True)
-    # For Kakao/Google, we might need more info or fetch it using the token
