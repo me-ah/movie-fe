@@ -7,17 +7,18 @@ import { login } from "@/api/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { setTokens } from "@/lib/tokenStorage";
+import { ArrowLeft } from "lucide-react";
 
 export default function Login() {
 	const router = useRouter();
 
-	const [email, setEmail] = useState("");
+	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	const handleLogin = async () => {
-		if (!email || !password) {
+		if (!username || !password) {
 			setError("이메일과 비밀번호를 입력해주세요.");
 			return;
 		}
@@ -26,7 +27,7 @@ export default function Login() {
 			setLoading(true);
 			setError(null);
 
-			const { accessToken, refreshToken } = await login(email, password);
+			const { accessToken, refreshToken } = await login(username, password);
 
 			setTokens(accessToken, refreshToken);
 			router.push("/");
@@ -41,14 +42,22 @@ export default function Login() {
 	return (
 		<div className="min-h-screen w-full bg-zinc-950 text-zinc-100 flex items-center justify-center p-6">
 			<div className="relative w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-md shadow-[0_10px_40px_rgba(0,0,0,0.6)] p-8">
+				<Button
+					className="absolute left-6 top-6 text-white-800  "
+					variant="ghost"
+					onClick={() => router.back()}
+				>
+					<ArrowLeft className="!w-8 !h-8" />
+				</Button>
+				
 				<h1 className="text-center text-2xl font-semibold mb-8">미아릭스</h1>
 
 				<div className="space-y-4">
 					<Input
-						type="email"
-						placeholder="이메일"
-						value={email}
-						onChange={(e) => setEmail(e.target.value)}
+						type="text"
+						placeholder="아이디"
+						value={username}
+						onChange={(e) => setUsername(e.target.value)}
 						disabled={loading}
 						className="h-12 rounded-xl bg-zinc-800/60 border-zinc-700"
 					/>
