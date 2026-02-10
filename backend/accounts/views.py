@@ -7,11 +7,13 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import TokenObtainPairView
 from drf_spectacular.utils import extend_schema
+from . import serializers # Import serializers module
 from .serializers import (
     UserRegistrationSerializer, 
     ChangePasswordSerializer, 
     SocialLoginSerializer,
-    CustomTokenObtainPairSerializer
+    CustomTokenObtainPairSerializer,
+    LoginResponseSerializer
 )
 
 User = get_user_model()
@@ -21,6 +23,10 @@ class CustomTokenObtainPairView(TokenObtainPairView):
     자체 로그인 API (ID 또는 Email 사용 가능)
     """
     serializer_class = CustomTokenObtainPairSerializer
+
+    @extend_schema(responses={200: LoginResponseSerializer})
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
 
 class RegisterView(generics.CreateAPIView):
     """
@@ -65,7 +71,7 @@ class KakaoLoginView(views.APIView):
     permission_classes = (AllowAny,)
     serializer_class = SocialLoginSerializer
 
-    @extend_schema(request=SocialLoginSerializer)
+    @extend_schema(request=SocialLoginSerializer, responses={200: LoginResponseSerializer})
     def post(self, request):
         serializer = SocialLoginSerializer(data=request.data)
         if not serializer.is_valid():
@@ -122,7 +128,7 @@ class GoogleLoginView(views.APIView):
     permission_classes = (AllowAny,)
     serializer_class = SocialLoginSerializer
 
-    @extend_schema(request=SocialLoginSerializer)
+    @extend_schema(request=SocialLoginSerializer, responses={200: LoginResponseSerializer})
     def post(self, request):
         serializer = SocialLoginSerializer(data=request.data)
         if not serializer.is_valid():
