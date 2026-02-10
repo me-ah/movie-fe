@@ -1,25 +1,10 @@
-"use client";
+import { Suspense } from "react";
+import AuthCallbackClient from "./AuthCallbackClient";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
-import { setTokens } from "@/lib/tokenStorage";
-
-export default function AuthCallbackClient() {
-	const router = useRouter();
-	const params = useSearchParams();
-
-	useEffect(() => {
-		const access = params.get("access");
-		const refresh = params.get("refresh");
-
-		if (access && refresh) {
-			setTokens(access, refresh);
-			router.replace("/");
-			return;
-		}
-
-		router.replace("/auth?error=missing_tokens");
-	}, [params, router]);
-
-	return null;
+export default function Page() {
+  return (
+    <Suspense fallback={<div className="p-6 text-zinc-400">로그인 처리 중...</div>}>
+      <AuthCallbackClient />
+    </Suspense>
+  );
 }
