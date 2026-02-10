@@ -4,6 +4,8 @@ import { useMemo, useState } from "react";
 import PostCard from "@/app/community/PostCard";
 import SortTabs, { SortKey } from "@/app/community/SortTabs";
 import type { CommunityPost } from "@/app/community/types";
+import { Button } from "@/components/ui/button";
+import CreateReviewDialog from "./CreateReviewDialog";
 
 const MOCK: CommunityPost[] = [
   {
@@ -21,6 +23,7 @@ const MOCK: CommunityPost[] = [
 
 export default function CommunityPage() {
   const [sort, setSort] = useState<SortKey>("latest");
+  const [createOpen, setCreateOpen] = useState(false);
 
   const posts = useMemo(() => {
     const copy = [...MOCK];
@@ -39,12 +42,21 @@ export default function CommunityPage() {
         <header className="text-center">
           <h1 className="text-5xl font-semibold tracking-tight">자유게시판</h1>
           <p className="mt-4 text-zinc-400">
-            SSAFLIX 에서 후기를 확인해보세요
+            me:ahflix 에서 후기를 확인해보세요
           </p>
         </header>
 
         {/* 탭 */}
-        <SortTabs value={sort} onChange={setSort} />
+        <div className="mt-8 flex items-center justify-between">
+          <SortTabs value={sort} onChange={setSort} />
+
+          <Button
+            onClick={() => setCreateOpen(true)}
+            className="bg-blue-500 hover:bg-blue-600"
+          >
+            게시글 생성
+          </Button>
+        </div>
 
         {/* 리스트 */}
         <section className="mt-10 space-y-6">
@@ -52,6 +64,15 @@ export default function CommunityPage() {
             <PostCard key={p.id} post={p} />
           ))}
         </section>
+
+         <CreateReviewDialog
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+          onCreated={() => {
+            // TODO: 리뷰 목록 API 붙이면 여기서 재조회하면 됨
+            // fetchPosts();
+          }}
+        />
       </main>
     </div>
   );
