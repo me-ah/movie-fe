@@ -34,7 +34,7 @@ SECRET_KEY = env("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env('DEBUG')
 
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -135,9 +135,10 @@ STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # CORS Settings
+CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOWED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])
 
-# CSRF Settings (CORS와 함께 설정하는 것이 안전합니다)
+# CSRF Settings
 CSRF_TRUSTED_ORIGINS = env.list('CORS_ALLOWED_ORIGINS', default=[])
 
 # REST Framework Settings
