@@ -16,14 +16,14 @@ export type SignupRequest = {
 	username: string;
 	email: string;
 	password: string;
-	passwordConfirm: string;
-	firstName: string;
-	lastName: string;
+	password_confirm: string;
+	first_name: string;
+	last_name: string;
 };
 
-export async function login(email: string, password: string) {
+export async function login(username: string, password: string) {
 	const res = await authClient.post<LoginResponse>("/accounts/login/", {
-		email,
+		username,
 		password,
 	});
 	const { user } = res.data;

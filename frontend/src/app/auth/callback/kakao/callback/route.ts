@@ -74,9 +74,11 @@ export async function GET(req: Request) {
 	});
 
 	if (!tokenRes.ok) {
-		console.error("Kakao token error:", await tokenRes.text());
-		return NextResponse.redirect(`${appUrl}/auth?error=token_failed`);
+	const text = await tokenRes.text();
+	console.error("Kakao token error:", tokenRes.status, text);
+	return NextResponse.redirect(`${appUrl}/auth?error=token_failed`);
 	}
+
 
 	const tokenJson = await tokenRes.json();
 	const kakaoAccessToken = tokenJson.access_token as string | undefined;

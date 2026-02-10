@@ -12,9 +12,9 @@ type FieldErrors = Partial<{
   username: string;
   email: string;
   password: string;
-  passwordConfirm: string;
-  firstName: string;
-  lastName: string;
+  password_confirm: string;
+  first_name: string;
+  last_name: string;
   form: string;
 }>;
 
@@ -26,9 +26,9 @@ function validateAll(values: {
   username: string;
   email: string;
   password: string;
-  passwordConfirm: string;
-  firstName: string;
-  lastName: string;
+  password_confirm: string;
+  first_name: string;
+  last_name: string;
 }): FieldErrors {
   const errors: FieldErrors = {};
 
@@ -53,7 +53,7 @@ function validateAll(values: {
     if (values.password.length < 8) {
       errors.password = "비밀번호는 8자 이상이어야 합니다.";
     } else {
-      // 최소한의 강도 체크: 대문자/소문자/숫자/특수문자 중 3종 이상
+      // 최소 강도 체크: 대문자/소문자/숫자/특수문자 중 3종 이상(권장)
       const groups = [
         /[a-z]/.test(values.password),
         /[A-Z]/.test(values.password),
@@ -69,24 +69,24 @@ function validateAll(values: {
   }
 
   // passwordConfirm
-  if (!values.passwordConfirm) {
-    errors.passwordConfirm = "비밀번호 확인을 입력해주세요.";
-  } else if (values.passwordConfirm !== values.password) {
-    errors.passwordConfirm = "비밀번호가 일치하지 않습니다.";
+  if (!values.password_confirm) {
+    errors.password_confirm = "비밀번호 확인을 입력해주세요.";
+  } else if (values.password_confirm !== values.password) {
+    errors.password_confirm = "비밀번호가 일치하지 않습니다.";
   }
 
-  // firstName
-  if (!values.firstName.trim()) {
-    errors.firstName = "이름을 입력해주세요.";
-  } else if (!NAME_RE.test(values.firstName.trim())) {
-    errors.firstName = "이름은 한글/영문만 입력 가능합니다.";
+  // first_name
+  if (!values.first_name.trim()) {
+    errors.first_name = "이름을 입력해주세요.";
+  } else if (!NAME_RE.test(values.first_name.trim())) {
+    errors.first_name = "이름은 한글/영문만 입력 가능합니다.";
   }
 
-  // lastName
-  if (!values.lastName.trim()) {
-    errors.lastName = "성을 입력해주세요.";
-  } else if (!NAME_RE.test(values.lastName.trim())) {
-    errors.lastName = "성은 한글/영문만 입력 가능합니다.";
+  // last_name
+  if (!values.last_name.trim()) {
+    errors.last_name = "성을 입력해주세요.";
+  } else if (!NAME_RE.test(values.last_name.trim())) {
+    errors.last_name = "성은 한글/영문만 입력 가능합니다.";
   }
 
   return errors;
@@ -98,16 +98,13 @@ export default function SignUp() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [passwordConfirm, setPasswordConfirm] = useState("");
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
+  const [password_confirm, setPasswordConfirm] = useState("");
+  const [first_name, setFirstName] = useState("");
+  const [last_name, setLastName] = useState("");
 
   const [loading, setLoading] = useState(false);
-
-  // 서버/제출 에러 (폼 상단)
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // 필드별 에러 + touched
   const [errors, setErrors] = useState<FieldErrors>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
 
@@ -116,14 +113,13 @@ export default function SignUp() {
       username,
       email,
       password,
-      passwordConfirm,
-      firstName,
-      lastName,
+      password_confirm,
+      first_name,
+      last_name,
     }),
-    [username, email, password, passwordConfirm, firstName, lastName]
+    [username, email, password, password_confirm, first_name, last_name]
   );
 
-  // 전체 유효성 (버튼 disable에도 사용)
   const currentErrors = useMemo(() => validateAll(values), [values]);
   const isValid = useMemo(
     () => Object.keys(currentErrors).length === 0,
@@ -135,7 +131,6 @@ export default function SignUp() {
   };
 
   const showError = (key: keyof FieldErrors) => {
-    // touched 된 것만 보여주고 싶으면 아래처럼
     if (!touched[key as string]) return null;
     return errors[key] ?? null;
   };
@@ -155,14 +150,12 @@ export default function SignUp() {
       email: true,
       password: true,
       passwordConfirm: true,
-      firstName: true,
-      lastName: true,
+      first_name: true,
+      last_name: true,
     });
 
     const nextErrors = validateAndSet();
-    if (Object.keys(nextErrors).length > 0) {
-      return;
-    }
+    if (Object.keys(nextErrors).length > 0) return;
 
     try {
       setLoading(true);
@@ -171,9 +164,9 @@ export default function SignUp() {
         username,
         email,
         password,
-        passwordConfirm,
-        firstName,
-        lastName,
+        password_confirm,
+        first_name,
+        last_name,
       });
 
       router.push("/auth/login");
@@ -209,9 +202,9 @@ export default function SignUp() {
               placeholder="아이디 (4~20자, 영문/숫자/_)"
               value={username}
               onChange={(e) => {
-                setUsername(e.target.value);
-                // 입력 중에도 에러 갱신 (실시간)
-                setErrors(validateAll({ ...values, username: e.target.value }));
+                const v = e.target.value;
+                setUsername(v);
+                setErrors(validateAll({ ...values, username: v }));
               }}
               onBlur={() => markTouched("username")}
               disabled={loading}
@@ -228,8 +221,9 @@ export default function SignUp() {
               placeholder="이메일"
               value={email}
               onChange={(e) => {
-                setEmail(e.target.value);
-                setErrors(validateAll({ ...values, email: e.target.value }));
+                const v = e.target.value;
+                setEmail(v);
+                setErrors(validateAll({ ...values, email: v }));
               }}
               onBlur={() => markTouched("email")}
               disabled={loading}
@@ -246,8 +240,9 @@ export default function SignUp() {
               placeholder="비밀번호 (8자 이상)"
               value={password}
               onChange={(e) => {
-                setPassword(e.target.value);
-                setErrors(validateAll({ ...values, password: e.target.value }));
+                const v = e.target.value;
+                setPassword(v);
+                setErrors(validateAll({ ...values, password: v }));
               }}
               onBlur={() => markTouched("password")}
               disabled={loading}
@@ -262,20 +257,19 @@ export default function SignUp() {
             <Input
               type="password"
               placeholder="비밀번호 확인"
-              value={passwordConfirm}
+              value={password_confirm}
               onChange={(e) => {
-                setPasswordConfirm(e.target.value);
-                setErrors(
-                  validateAll({ ...values, passwordConfirm: e.target.value })
-                );
+                const v = e.target.value;
+                setPasswordConfirm(v);
+                setErrors(validateAll({ ...values, password_confirm: v }));
               }}
-              onBlur={() => markTouched("passwordConfirm")}
+              onBlur={() => markTouched("password_confirm")}
               disabled={loading}
               className="h-12 rounded-xl bg-zinc-800/60 border-zinc-700"
             />
-            {showError("passwordConfirm") && (
+            {showError("password_confirm") && (
               <p className="text-xs text-red-400">
-                {showError("passwordConfirm")}
+                {showError("password_confirm")}
               </p>
             )}
           </div>
@@ -285,19 +279,20 @@ export default function SignUp() {
               <Input
                 type="text"
                 placeholder="이름"
-                value={firstName}
+                value={first_name}
                 onChange={(e) => {
-                  setFirstName(e.target.value);
-                  setErrors(
-                    validateAll({ ...values, firstName: e.target.value })
-                  );
+                  const v = e.target.value;
+                  setFirstName(v);
+                  setErrors(validateAll({ ...values, first_name: v }));
                 }}
-                onBlur={() => markTouched("firstName")}
+                onBlur={() => markTouched("first_name")}
                 disabled={loading}
                 className="h-12 rounded-xl bg-zinc-800/60 border-zinc-700"
               />
-              {showError("firstName") && (
-                <p className="text-xs text-red-400">{showError("firstName")}</p>
+              {showError("first_name") && (
+                <p className="text-xs text-red-400">
+                  {showError("first_name")}
+                </p>
               )}
             </div>
 
@@ -305,19 +300,18 @@ export default function SignUp() {
               <Input
                 type="text"
                 placeholder="성"
-                value={lastName}
+                value={last_name}
                 onChange={(e) => {
-                  setLastName(e.target.value);
-                  setErrors(
-                    validateAll({ ...values, lastName: e.target.value })
-                  );
+                  const v = e.target.value;
+                  setLastName(v);
+                  setErrors(validateAll({ ...values, last_name: v }));
                 }}
-                onBlur={() => markTouched("lastName")}
+                onBlur={() => markTouched("last_name")}
                 disabled={loading}
                 className="h-12 rounded-xl bg-zinc-800/60 border-zinc-700"
               />
-              {showError("lastName") && (
-                <p className="text-xs text-red-400">{showError("lastName")}</p>
+              {showError("last_name") && (
+                <p className="text-xs text-red-400">{showError("last_name")}</p>
               )}
             </div>
           </div>

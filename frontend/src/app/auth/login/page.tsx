@@ -12,13 +12,13 @@ import { ArrowLeft } from "lucide-react";
 export default function Login() {
 	const router = useRouter();
 
-	const [email, setEmail] = useState("");
+	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	const handleLogin = async () => {
-		if (!email || !password) {
+		if (!username || !password) {
 			setError("이메일과 비밀번호를 입력해주세요.");
 			return;
 		}
@@ -27,7 +27,7 @@ export default function Login() {
 			setLoading(true);
 			setError(null);
 
-			const { accessToken, refreshToken } = await login(email, password);
+			const { accessToken, refreshToken } = await login(username, password);
 
 			setTokens(accessToken, refreshToken);
 			router.push("/");
@@ -54,10 +54,10 @@ export default function Login() {
 
 				<div className="space-y-4">
 					<Input
-						type="email"
-						placeholder="이메일"
-						value={email}
-						onChange={(e) => setEmail(e.target.value)}
+						type="text"
+						placeholder="아이디"
+						value={username}
+						onChange={(e) => setUsername(e.target.value)}
 						disabled={loading}
 						className="h-12 rounded-xl bg-zinc-800/60 border-zinc-700"
 					/>
