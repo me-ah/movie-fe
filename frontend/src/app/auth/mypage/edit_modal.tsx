@@ -1,0 +1,183 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { type BackendMyPageResponse, getMyPage, patchMe } from "@/api/user";
+import { Button } from "@/components/ui/button";
+import {
+	Dialog,
+	DialogContent,
+	DialogDescription,
+	DialogFooter,
+	DialogHeader,
+	DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+
+type Props = {
+	open: boolean;
+	onOpenChange: (open: boolean) => void;
+
+	// ✅ 저장 성공 시 부모(MyPage)에게 최신 mypage 전체 넘겨주기
+	onSaved: (data: BackendMyPageResponse) => void;
+
+	onWithdraw?: () => void;
+};
+
+export default function EditModal({
+	open,
+	onOpenChange,
+	onSaved,
+	onWithdraw,
+}: Props) {
+	const [editFirstname, setEditFirstname] = useState("");
+	const [editLastname, setEditLastname] = useState("");
+	const [editEmail, setEditEmail] = useState("");
+
+	const [saving, setSaving] = useState(false);
+	const [saveError, setSaveError] = useState<string | null>(null);
+	const [loading, setLoading] = useState(false);
+
+	useEffect(() => {
+		if (!open) return;
+
+		let cancelled = false;
+
+		const load = async () => {
+			try {
+				setLoading(true);
+				setSaveError(null);
+
+				const data = await getMyPage();
+				if (cancelled) return;
+
+				setEditFirstname(data.userdata?.firstname ?? "");
+				setEditLastname(data.userdata?.lastname ?? "");
+				setEditEmail(data.userdata?.useremail ?? "");
+			} catch {
+				if (!cancelled) setSaveError("유저 정보를 불러오지 못했습니다.");
+			} finally {
+				if (!cancelled) setLoading(false);
+			}
+		};
+
+		load();
+		return () => {
+			cancelled = true;
+		};
+	}, [open]);
+
+	const onCancel = () => onOpenChange(false);
+
+	const onSave = async () => {
+		if (!editFirstname.trim() || !editLastname.trim() || !editEmail.trim()) {
+			setSaveError("이름/성과 이메일은 필수입니다.");
+			return;
+		}
+
+		try {
+			setSaving(true);
+			setSaveError(null);
+
+			await patchMe({
+				firstname: editFirstname.trim(),
+				lastname: editLastname.trim(),
+				useremail: editEmail.trim(),
+			});
+
+			// ✅ 저장 후 서버 기준 최신 mypage 전체 다시 조회
+			const data = await getMyPage();
+			onSaved(data);
+			onOpenChange(false);
+		} catch {
+			setSaveError("저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	const disabled = saving || loading;
+
+	return (
+		<Dialog open={open} onOpenChange={onOpenChange}>
+			<DialogContent className="sm:max-w-[520px] rounded-2xl border border-zinc-800 bg-zinc-950 text-zinc-100">
+				<DialogHeader>
+					<DialogTitle className="text-xl">프로필 수정</DialogTitle>
+					<DialogDescription className="text-zinc-400">
+						이름/성과 이메일을 수정할 수 있습니다.
+					</DialogDescription>
+				</DialogHeader>
+
+				<div className="space-y-4">
+					<div className="space-y-2">
+						<div className="text-sm text-zinc-300">이름</div>
+						<Input
+							value={editFirstname}
+							onChange={(e) => setEditFirstname(e.target.value)}
+							disabled={disabled}
+							className="h-11 rounded-xl bg-zinc-900/60 border-zinc-800"
+							placeholder="이름"
+						/>
+					</div>
+
+					<div className="space-y-2">
+						<div className="text-sm text-zinc-300">성</div>
+						<Input
+							value={editLastname}
+							onChange={(e) => setEditLastname(e.target.value)}
+							disabled={disabled}
+							className="h-11 rounded-xl bg-zinc-900/60 border-zinc-800"
+							placeholder="성"
+						/>
+					</div>
+
+					<div className="space-y-2">
+						<div className="text-sm text-zinc-300">이메일</div>
+						<Input
+							value={editEmail}
+							onChange={(e) => setEditEmail(e.target.value)}
+							disabled={disabled}
+							className="h-11 rounded-xl bg-zinc-900/60 border-zinc-800"
+							placeholder="email@example.com"
+							type="email"
+						/>
+					</div>
+
+					{saveError && <p className="text-sm text-red-400">{saveError}</p>}
+				</div>
+
+				<DialogFooter className="flex items-center justify-between">
+					<Button
+						type="button"
+						variant="secondary"
+						onClick={() => (onWithdraw ? onWithdraw() : onOpenChange(false))}
+						disabled={disabled}
+						className="rounded-xl bg-red-500 text-white border border-red-600 hover:bg-red-600"
+					>
+						회원탈퇴
+					</Button>
+
+					<div className="flex items-center gap-2">
+						<Button
+							type="button"
+							variant="secondary"
+							onClick={onCancel}
+							disabled={disabled}
+							className="rounded-xl bg-white text-black border border-zinc-300 hover:bg-gray-200"
+						>
+							취소
+						</Button>
+
+						<Button
+							type="button"
+							onClick={onSave}
+							disabled={disabled}
+							className="rounded-xl bg-blue-500 hover:bg-blue-600 text-white"
+						>
+							{saving ? "저장 중..." : loading ? "불러오는 중..." : "저장"}
+						</Button>
+					</div>
+				</DialogFooter>
+			</DialogContent>
+		</Dialog>
+	);
+}

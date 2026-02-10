@@ -23,7 +23,7 @@ api.interceptors.request.use((config) => {
 	return config;
 });
 
-// refresh 재인증 로직
+
 let isRefreshing = false;
 let refreshPromise: Promise<string> | null = null;
 
@@ -35,7 +35,7 @@ api.interceptors.response.use(
 		if (error.response?.status === 401 && !originalRequest?._retry) {
 			originalRequest._retry = true;
 
-			// refreshToken 없으면 재인증 불가 → 로그아웃 처리
+
 			const refreshToken = getRefreshToken();
 			if (!refreshToken) {
 				clearTokens();
@@ -55,7 +55,7 @@ api.interceptors.response.use(
 						return newAccessToken;
 					})
 					.catch((err) => {
-						// refresh 자체가 실패하면 토큰 정리
+
 						clearTokens();
 						throw err;
 					})
@@ -67,7 +67,7 @@ api.interceptors.response.use(
 			const newToken = await refreshPromise;
 			originalRequest.headers.Authorization = `Bearer ${newToken}`;
 
-			return api(originalRequest); // 🔁 원래 요청 재시도
+			return api(originalRequest); 
 		}
 
 		return Promise.reject(error);
