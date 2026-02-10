@@ -27,15 +27,13 @@ urlpatterns = [
 
     path("admin/", admin.site.urls),
 
-    path("api/accounts/", include("accounts.urls")),
+        path("api/accounts/", include("accounts.urls")),
 
-    # path("api/shorts/", include("shorts.urls")), # To be implemented
+        # path("api/home/", include("home.urls")), # To be implemented
 
-    # path("api/home/", include("home.urls")), # To be implemented
+        
 
-    
-
-    # Swagger URLs
+        # Swagger URLs
 
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
 

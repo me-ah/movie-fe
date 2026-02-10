@@ -53,7 +53,6 @@ INSTALLED_APPS = [
     "drf_spectacular",
     # Local apps
     "accounts",
-    "shorts",
     "home",
 ]
 
