@@ -1,9 +1,13 @@
 "use client";
 
+import { Link } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 
 export default function Auth() {
+	const router = useRouter();
+
 	return (
 		<main className="min-h-screen flex items-center justify-center">
 			<div className="w-full max-w-xl flex flex-col items-center gap-8">
@@ -33,7 +37,7 @@ export default function Auth() {
             font-medium text-lg
           "
 						onClick={() => {
-							window.location.href = "/api/kakao";
+							window.location.href = "/auth/callback/kakao";
 						}}
 					>
 						<Image
@@ -57,6 +61,9 @@ export default function Auth() {
             flex items-center justify-center gap-2
             font-medium text-lg
           "
+						onClick={() => {
+							window.location.href = "/auth/callback/google";
+						}}
 					>
 						<Image
 							src="/icons/google.svg"
@@ -72,6 +79,7 @@ export default function Auth() {
 						variant="outline"
 						type="button"
 						className="w-full h-15 text-lg"
+						onClick={() => router.push("/auth/login")}
 					>
 						일반 계정으로 로그인
 					</Button>
@@ -79,11 +87,15 @@ export default function Auth() {
 
 				{/* 하단 액션 */}
 				<section className="flex gap-4 text-sm">
-					<Button variant="outline" size="sm">
+					<Button
+						variant="outline"
+						size="sm"
+						onClick={() => router.push("/auth/signup")}
+					>
 						회원가입하기
 					</Button>
 					<Button variant="outline" size="sm">
-						기존 계정 찾기
+						아이디/ 비번 찾기
 					</Button>
 				</section>
 			</div>

@@ -23,7 +23,6 @@ api.interceptors.request.use((config) => {
 	return config;
 });
 
-
 let isRefreshing = false;
 let refreshPromise: Promise<string> | null = null;
 
@@ -34,7 +33,6 @@ api.interceptors.response.use(
 
 		if (error.response?.status === 401 && !originalRequest?._retry) {
 			originalRequest._retry = true;
-
 
 			const refreshToken = getRefreshToken();
 			if (!refreshToken) {
@@ -55,7 +53,6 @@ api.interceptors.response.use(
 						return newAccessToken;
 					})
 					.catch((err) => {
-
 						clearTokens();
 						throw err;
 					})
@@ -67,7 +64,7 @@ api.interceptors.response.use(
 			const newToken = await refreshPromise;
 			originalRequest.headers.Authorization = `Bearer ${newToken}`;
 
-			return api(originalRequest); 
+			return api(originalRequest);
 		}
 
 		return Promise.reject(error);
