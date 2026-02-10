@@ -29,24 +29,13 @@ export type BackendMyPageResponse = {
 };
 
 export async function getMyPage() {
-<<<<<<< HEAD
  const res = await api.post<BackendMyPageResponse>("/accounts/mypage/", {
     userid: "userId",
-  });  console.log(res.data)
-  console.log("Gdgdgd")
+  }); 
   return res.data;
-=======
-	const res = await api.get<BackendMyPageResponse>("/api/accounts/mypage/");
-	return res.data;
->>>>>>> 926bc2d (fix/build 및 lint)
 }
 
 export async function patchMe(payload: UpdateMePayload) {
-<<<<<<< HEAD
   const res = await api.patch("/accounts/mypage/", payload);
   return res.data;
-=======
-	const res = await api.patch("/api/accounts/mypage/", payload);
-	return res.data;
->>>>>>> 926bc2d (fix/build 및 lint)
 }
