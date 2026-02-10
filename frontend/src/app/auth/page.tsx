@@ -37,7 +37,7 @@ export default function Auth() {
             font-medium text-lg
           "
 						onClick={() => {
-							window.location.href = "/api/kakao";
+							window.location.href = "/auth/callback/kakao";
 						}}
 					>
 						<Image
@@ -62,7 +62,7 @@ export default function Auth() {
             font-medium text-lg
           "
 						onClick={() => {
-							window.location.href = "/api/google";
+							window.location.href = "/auth/callback/google";
 						}}
 					>
 						<Image

@@ -51,7 +51,7 @@ export default function SignUp() {
 				lastName,
 			});
 
-			// ✅ 회원가입 성공 → 로그인 페이지
+
 			router.push("/auth/login");
 		} catch {
 			setError("회원가입에 실패했습니다.");

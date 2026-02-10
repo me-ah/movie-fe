@@ -96,7 +96,7 @@ export async function GET(req: Request) {
 	const me = await meRes.json();
 
 	// 3) 백엔드에 카카오 토큰 전달 → 서비스 JWT 발급
-	const backendRes = await fetch(`${backendBase}/auth/social/kakao`, {
+	const backendRes = await fetch(`${backendBase}/accounts/login/kakao/`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
