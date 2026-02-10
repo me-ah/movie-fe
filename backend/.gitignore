@@ -35,7 +35,7 @@ media/
 docker-compose.override.yml
 
 # --- Data --- 26/02/09 20:14 두진 추가
-backend/movie_data/
+movie_data/
 *.mp4
 *.ts
 
