@@ -1,5 +1,4 @@
 // src/api/auth.ts
-import api from "@/lib/apiClient";
 import { setUser } from "@/lib/userStorage";
 import authClient from "@/lib/authClient";
 
@@ -23,7 +22,7 @@ export type SignupRequest = {
 };
 
 export async function login(email: string, password: string) {
-	const res = await authClient.post<LoginResponse>("/api/login/", {
+	const res = await authClient.post<LoginResponse>("/accounts/login/", {
 		email,
 		password,
 	});
@@ -40,6 +39,7 @@ export async function login(email: string, password: string) {
 }
 
 export async function signup(payload: SignupRequest) {
-	const res = await authClient.post("/api/register/", payload);
+	const res = await authClient.post("/accounts/register/", payload);
+	console.log(res.data)
 	return res.data;
 }
