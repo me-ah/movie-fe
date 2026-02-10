@@ -12,21 +12,6 @@ services:
     depends_on:
       - db
       - redis
-  
-  collector: # 26/02/09 20:13 두진 추가
-    build: .
-    container_name: movie-collector
-    restart: always
-    # movie_collector 폴더 안의 파일을 루트 기준으로 실행
-    command: python -u movie_collector/full_collector.py
-    volumes:
-      - .:/app
-      - ./movie_data:/app/movie_data
-    env_file:
-      - .env
-    depends_on:
-      - db
-      - redis
 
   db:
     image: postgres:15
