@@ -42,7 +42,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         if attrs['password'] != attrs['password_confirm']:
-            raise serializers.ValidationError({"password": "Password fields didn't match."})
+            raise serializers.ValidationError({"password": "비밀번호가 일치하지 않습니다."})
         return attrs
 
     def create(self, validated_data):
@@ -68,7 +68,7 @@ class ChangePasswordSerializer(serializers.Serializer):
 
     def validate(self, attrs):
         if attrs['new_password'] != attrs['new_password_confirm']:
-            raise serializers.ValidationError({"new_password": "New password fields didn't match."})
+            raise serializers.ValidationError({"new_password": "비밀번호 확인이 일치하지 않습니다."})
         return attrs
 
 class SocialLoginSerializer(serializers.Serializer):
@@ -76,6 +76,17 @@ class SocialLoginSerializer(serializers.Serializer):
         required=True, 
         help_text="소셜 서비스(카카오/구글)에서 발급받은 액세스 토큰입니다."
     )
+
+class UserDataSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    username = serializers.CharField()
+    email = serializers.EmailField()
+
+class LoginResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+    user = UserDataSerializer()
+    token = serializers.CharField()
+    refresh = serializers.CharField()
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
