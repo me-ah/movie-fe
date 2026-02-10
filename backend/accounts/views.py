@@ -5,10 +5,22 @@ from rest_framework import status, generics, views
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 from drf_spectacular.utils import extend_schema
-from .serializers import UserRegistrationSerializer, ChangePasswordSerializer, SocialLoginSerializer
+from .serializers import (
+    UserRegistrationSerializer, 
+    ChangePasswordSerializer, 
+    SocialLoginSerializer,
+    CustomTokenObtainPairSerializer
+)
 
 User = get_user_model()
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    """
+    자체 로그인 API (ID 또는 Email 사용 가능)
+    """
+    serializer_class = CustomTokenObtainPairSerializer
 
 class RegisterView(generics.CreateAPIView):
     """
@@ -61,7 +73,6 @@ class KakaoLoginView(views.APIView):
         
         access_token = serializer.validated_data.get('access_token')
 
-        # Verify token with Kakao
         user_info_url = "https://kapi.kakao.com/v2/user/me"
         headers = {'Authorization': f'Bearer {access_token}'}
         user_info_response = requests.get(user_info_url, headers=headers)
@@ -83,7 +94,6 @@ class KakaoLoginView(views.APIView):
             if user.login_type != 'kakao':
                 return Response({'error': 'Email already registered with different login type'}, status=status.HTTP_400_BAD_REQUEST)
         except User.DoesNotExist:
-            # Create new user
             user = User.objects.create_user(
                 username=f"kakao_{kakao_id}",
                 email=email,
@@ -95,8 +105,14 @@ class KakaoLoginView(views.APIView):
 
         refresh = RefreshToken.for_user(user)
         return Response({
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
+            "message": "로그인 성공",
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email
+            },
+            "token": str(refresh.access_token),
+            "refresh": str(refresh)
         })
 
 class GoogleLoginView(views.APIView):
@@ -114,7 +130,6 @@ class GoogleLoginView(views.APIView):
 
         access_token = serializer.validated_data.get('access_token')
         
-        # Google user info endpoint
         user_info_url = "https://www.googleapis.com/oauth2/v3/userinfo"
         params = {'access_token': access_token}
         user_info_response = requests.get(user_info_url, params=params)
@@ -148,6 +163,12 @@ class GoogleLoginView(views.APIView):
 
         refresh = RefreshToken.for_user(user)
         return Response({
-            'refresh': str(refresh),
-            'access': str(refresh.access_token),
+            "message": "로그인 성공",
+            "user": {
+                "id": user.id,
+                "username": user.username,
+                "email": user.email
+            },
+            "token": str(refresh.access_token),
+            "refresh": str(refresh)
         })
