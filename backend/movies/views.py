@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from drf_spectacular.utils import extend_schema
 
 from .models import Movie
 from .serializers import MovieShortsSerializer
@@ -21,7 +22,12 @@ class MovieShortsView(APIView):
         - page_size (int, optional): 페이지 크기 (기본값 10, 최대 50)
     """
     permission_classes = [AllowAny]
+    serializer_class = MovieShortsSerializer
 
+    @extend_schema(
+        responses={200: MovieShortsSerializer(many=True)},
+        description="영화 쇼츠 목록을 반환합니다."
+    )
     def get(self, request):
         # ---- 페이지 크기 설정 ----
         page_size = min(int(request.query_params.get('page_size', 10)), 50)

@@ -16,6 +16,7 @@ db.sqlite3-journal
 staticfiles/
 media/
 .env
+.env.local
 
 # --- OS & IDE ---
 .DS_Store
@@ -37,6 +38,8 @@ media/
 # --- Docker ---
 .docker/
 docker-compose.override.yml
+nginx/nginx.local.conf
+scripts/compose-up-local.sh
 
 # --- Data & Generated ---
 movie_data/

@@ -53,8 +53,8 @@ INSTALLED_APPS = [
     "drf_spectacular",
     # Local apps
     "accounts",
-    "movies",
     "home",
+    "movies",
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
@@ -148,6 +148,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'EXCEPTION_HANDLER': 'config.utils.custom_exception_handler',
 }
 
 SPECTACULAR_SETTINGS = {
