@@ -12,7 +12,7 @@ class MovieShortsAPITest(TestCase):
     # ========== 테스트 데이터 세팅 ==========
     def setUp(self):
         self.client = APIClient()
-        self.url = '/api/v1/movies/shorts/'
+        self.url = '/api/movies/shorts/'
 
         # ---- 장르 생성 ----
         self.genre_action = Genre.objects.create(id=28, name='액션')
@@ -183,3 +183,171 @@ class MovieShortsAPITest(TestCase):
             self.assertFalse(movie['is_liked'])
 
         print('✅ [PASS] is_liked 항상 False (비로그인 상태)')
+
+
+class MovieShortsDetailAPITest(TestCase):
+    """
+    쇼츠 상세 조회 API (/api/movies/shorts/{movie_id}/) 테스트
+
+    공유 링크를 통해 특정 영화를 조회할 때의 응답을 검증합니다.
+    응답 구조: { "current": {...}, "next_cursor": "..." | null, "results": [...] }
+    """
+
+    # ========== 테스트 데이터 세팅 ==========
+    def setUp(self):
+        self.client = APIClient()
+
+        # ---- 장르 생성 ----
+        self.genre_action = Genre.objects.create(id=28, name='액션')
+        self.genre_comedy = Genre.objects.create(id=35, name='코미디')
+
+        # ---- 영화 15개 생성 (페이지네이션 테스트용) ----
+        self.movies = []
+        for i in range(1, 16):
+            movie = Movie.objects.create(
+                movie_id=str(10000 + i),
+                title=f'테스트 영화 {i}',
+                youtube_key=f'test_key_{i}',
+                embed_url=f'https://www.youtube.com/embed/test_key_{i}?autoplay=1',
+                release_date='2024-01-15',
+                vote_average=7.5,
+                star_rating=3.8,
+                ott_providers=['Netflix'],
+                is_in_theaters=False,
+                overview=f'테스트 영화 {i}의 줄거리입니다.',
+                poster_path=f'https://image.tmdb.org/t/p/w500/test_{i}.jpg',
+                view_count=i * 10,
+                like_count=i * 5,
+            )
+            movie.genres.set([self.genre_action, self.genre_comedy])
+            self.movies.append(movie)
+
+    # ========== 1. 유효한 movie_id로 요청 시 200 반환 ==========
+    def test_detail_returns_200(self):
+        """
+        유효한 movie_id('10001')로 요청하면 200 상태코드를 반환하는지 확인합니다.
+
+        요청: GET /api/movies/shorts/10001/
+        예상: status_code = 200
+        """
+        response = self.client.get('/api/movies/shorts/10001/')
+        self.assertEqual(response.status_code, 200)
+        print('✅ [PASS] 유효한 movie_id → 200 반환')
+
+    # ========== 2. 존재하지 않는 movie_id로 요청 시 404 반환 ==========
+    def test_detail_returns_404_for_invalid_id(self):
+        """
+        존재하지 않는 movie_id('99999')로 요청하면 404 상태코드를 반환하는지 확인합니다.
+
+        요청: GET /api/movies/shorts/99999/
+        예상 응답:
+        {
+            "detail": "찾을 수 없습니다."  (404 Not Found)
+        }
+        """
+        response = self.client.get('/api/movies/shorts/99999/')
+        self.assertEqual(response.status_code, 404)
+        print('✅ [PASS] 존재하지 않는 movie_id → 404 반환')
+
+    # ========== 3. 응답에 current, next_cursor, results 키 존재 ==========
+    def test_detail_response_has_current_and_results(self):
+        """
+        응답 최상위에 'current', 'next_cursor', 'results' 3개 키가 모두 존재하는지 확인합니다.
+
+        요청: GET /api/movies/shorts/10001/
+        예상 응답 구조:
+        {
+            "current": { ... },      ← Object (해당 영화 상세)
+            "next_cursor": "...",     ← String | null
+            "results": [ ... ]       ← Array (이후 영화 목록)
+        }
+        """
+        response = self.client.get('/api/movies/shorts/10001/')
+        data = response.json()
+
+        self.assertIn('current', data)
+        self.assertIn('next_cursor', data)
+        self.assertIn('results', data)
+        print('✅ [PASS] 응답에 current, next_cursor, results 키 존재')
+
+    # ========== 4. current에 모든 필수 필드 15개 포함 ==========
+    def test_current_has_all_required_fields(self):
+        """
+        current 객체 안에 쇼츠 API의 모든 필수 필드 15개가 존재하는지 확인합니다.
+
+        요청: GET /api/movies/shorts/10001/
+        예상 current 데이터:
+        {
+            "movie_id": "10001",
+            "title": "테스트 영화 1",
+            "youtube_key": "test_key_1",
+            "embed_url": "https://www.youtube.com/embed/test_key_1?autoplay=1",
+            "release_date": "2024-01-15",
+            "genres": [{"id": 28, "name": "액션"}, {"id": 35, "name": "코미디"}],
+            "vote_average": 7.5,
+            "star_rating": 3.8,
+            "ott_providers": ["Netflix"],
+            "is_in_theaters": false,
+            "overview": "테스트 영화 1의 줄거리입니다.",
+            "poster_path": "https://image.tmdb.org/t/p/w500/test_1.jpg",
+            "view_count": 10,
+            "like_count": 5,
+            "is_liked": false
+        }
+        """
+        response = self.client.get('/api/movies/shorts/10001/')
+        data = response.json()
+        current = data['current']
+
+        required_fields = [
+            'movie_id', 'title', 'youtube_key', 'embed_url',
+            'release_date', 'genres', 'vote_average', 'star_rating',
+            'ott_providers', 'is_in_theaters', 'overview', 'poster_path',
+            'view_count', 'like_count', 'is_liked',
+        ]
+
+        for field in required_fields:
+            self.assertIn(field, current, f'current에 "{field}" 필드가 없습니다')
+
+        # ---- 값 검증 ----
+        self.assertEqual(current['movie_id'], '10001')
+        self.assertEqual(current['title'], '테스트 영화 1')
+
+        print(f'✅ [PASS] current에 필수 필드 {len(required_fields)}개 모두 존재')
+        print(f'   movie_id={current["movie_id"]}, title={current["title"]}')
+
+    # ========== 5. results에 current 이후 영화만 포함 ==========
+    def test_results_contain_next_movies_after_current(self):
+        """
+        results 배열이 current 영화 이후의 영화들만 포함하는지 확인합니다.
+        current 영화 자체는 results에 포함되면 안 됩니다.
+
+        요청: GET /api/movies/shorts/10001/
+        검증:
+        - current의 movie_id('10001')가 results에 포함되지 않음
+        - results 개수 = 10 (총 15개 중 첫 번째 제외, 나머지 14개 중 10개)
+        - next_cursor가 존재 (아직 4개 남음)
+        - results의 모든 movie_id가 current의 movie_id보다 뒤에 위치
+        """
+        response = self.client.get('/api/movies/shorts/10001/')
+        data = response.json()
+
+        current_movie_id = data['current']['movie_id']
+        result_ids = [m['movie_id'] for m in data['results']]
+
+        # ---- current가 results에 포함되면 안 됨 ----
+        self.assertNotIn(current_movie_id, result_ids,
+                         'current 영화가 results에 포함되어 있습니다')
+
+        # ---- results 개수 검증 (기본 page_size=10) ----
+        self.assertEqual(len(data['results']), 10,
+                         '이후 영화 14개 중 10개가 반환되어야 합니다')
+
+        # ---- 다음 페이지 존재 (4개 남음) ----
+        self.assertIsNotNone(data['next_cursor'],
+                             '아직 4개 남았으므로 next_cursor가 있어야 합니다')
+
+        print(f'✅ [PASS] results에 current 이후 영화 {len(data["results"])}개 반환')
+        print(f'   current: {current_movie_id}')
+        print(f'   results: {result_ids}')
+        print(f'   next_cursor: {data["next_cursor"]}')
