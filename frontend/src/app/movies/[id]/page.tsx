@@ -1,3 +1,9 @@
-export default function MovieDetail() {
-	return <div>영화 상세 페이지</div>;
+import MovieDetailClient from "./MovieDetailClient";
+
+export default function MovieDetailPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  return <MovieDetailClient movieId={params.id} />;
 }
