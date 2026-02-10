@@ -20,7 +20,6 @@ class MovieShortsView(APIView):
         - page_size (int, optional): 페이지 크기 (기본값 10, 최대 50)
     """
     permission_classes = [AllowAny]
-    serializer_class = MovieShortsSerializer
 
     def get(self, request):
         # ---- 페이지 크기 설정 ----
