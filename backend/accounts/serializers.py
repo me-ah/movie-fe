@@ -9,7 +9,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True, required=True)
     
-    # Genre fields as Integer (optional, default 0)
     pref_action = serializers.IntegerField(required=False, default=0)
     pref_adventure = serializers.IntegerField(required=False, default=0)
     pref_animation = serializers.IntegerField(required=False, default=0)
@@ -78,9 +77,11 @@ class SocialLoginSerializer(serializers.Serializer):
     )
 
 class UserDataSerializer(serializers.Serializer):
-    id = serializers.IntegerField()
+    userid = serializers.IntegerField(source='id')
     username = serializers.CharField()
-    email = serializers.EmailField()
+    useremail = serializers.EmailField(source='email')
+    firstname = serializers.CharField(source='first_name')
+    lastname = serializers.CharField(source='last_name')
 
 class LoginResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
@@ -92,28 +93,46 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         username = attrs.get("username")
         password = attrs.get("password")
-
         user = authenticate(username=username, password=password)
-        
         if not user:
             try:
                 user_obj = User.objects.get(email=username)
                 user = authenticate(username=user_obj.username, password=password)
             except User.DoesNotExist:
                 pass
-
         if not user:
             raise serializers.ValidationError('아이디 또는 비밀번호가 일치하지 않습니다.')
-
         refresh = self.get_token(user)
-
         return {
             "message": "로그인 성공",
             "user": {
-                "id": user.id,
+                "userid": user.id,
                 "username": user.username,
-                "email": user.email
+                "useremail": user.email,
+                "firstname": user.first_name,
+                "lastname": user.last_name
             },
             "token": str(refresh.access_token),
             "refresh": str(refresh)
         }
+
+# ========== MyPage Serializers ==========
+
+class MyPageRequestSerializer(serializers.Serializer):
+    userid = serializers.IntegerField()
+    username = serializers.CharField()
+    useremail = serializers.EmailField()
+    firstname = serializers.CharField()
+    lastname = serializers.CharField()
+
+class MovieMiniSerializer(serializers.Serializer):
+    """Simplified movie info for MyPage"""
+    name = serializers.CharField(source='title')
+    poster = serializers.URLField(source='poster_path')
+
+class MyPageResponseSerializer(serializers.Serializer):
+    userdata = UserDataSerializer()
+    watchtime = serializers.IntegerField()
+    usermylist = serializers.IntegerField()
+    recordmovie = serializers.DictField(child=serializers.DictField())
+    mylistmovie = serializers.DictField(child=serializers.DictField())
