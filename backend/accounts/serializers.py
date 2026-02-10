@@ -8,26 +8,26 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password_confirm = serializers.CharField(write_only=True, required=True)
     
-    # Explicitly set genre fields as optional
-    pref_action = serializers.BooleanField(required=False, default=False)
-    pref_adventure = serializers.BooleanField(required=False, default=False)
-    pref_animation = serializers.BooleanField(required=False, default=False)
-    pref_comedy = serializers.BooleanField(required=False, default=False)
-    pref_crime = serializers.BooleanField(required=False, default=False)
-    pref_documentary = serializers.BooleanField(required=False, default=False)
-    pref_drama = serializers.BooleanField(required=False, default=False)
-    pref_family = serializers.BooleanField(required=False, default=False)
-    pref_fantasy = serializers.BooleanField(required=False, default=False)
-    pref_history = serializers.BooleanField(required=False, default=False)
-    pref_horror = serializers.BooleanField(required=False, default=False)
-    pref_music = serializers.BooleanField(required=False, default=False)
-    pref_mystery = serializers.BooleanField(required=False, default=False)
-    pref_romance = serializers.BooleanField(required=False, default=False)
-    pref_science_fiction = serializers.BooleanField(required=False, default=False)
-    pref_tv_movie = serializers.BooleanField(required=False, default=False)
-    pref_thriller = serializers.BooleanField(required=False, default=False)
-    pref_war = serializers.BooleanField(required=False, default=False)
-    pref_western = serializers.BooleanField(required=False, default=False)
+    # Genre fields as Integer (optional, default 0)
+    pref_action = serializers.IntegerField(required=False, default=0)
+    pref_adventure = serializers.IntegerField(required=False, default=0)
+    pref_animation = serializers.IntegerField(required=False, default=0)
+    pref_comedy = serializers.IntegerField(required=False, default=0)
+    pref_crime = serializers.IntegerField(required=False, default=0)
+    pref_documentary = serializers.IntegerField(required=False, default=0)
+    pref_drama = serializers.IntegerField(required=False, default=0)
+    pref_family = serializers.IntegerField(required=False, default=0)
+    pref_fantasy = serializers.IntegerField(required=False, default=0)
+    pref_history = serializers.IntegerField(required=False, default=0)
+    pref_horror = serializers.IntegerField(required=False, default=0)
+    pref_music = serializers.IntegerField(required=False, default=0)
+    pref_mystery = serializers.IntegerField(required=False, default=0)
+    pref_romance = serializers.IntegerField(required=False, default=0)
+    pref_science_fiction = serializers.IntegerField(required=False, default=0)
+    pref_tv_movie = serializers.IntegerField(required=False, default=0)
+    pref_thriller = serializers.IntegerField(required=False, default=0)
+    pref_war = serializers.IntegerField(required=False, default=0)
+    pref_western = serializers.IntegerField(required=False, default=0)
 
     class Meta:
         model = User
@@ -72,4 +72,7 @@ class ChangePasswordSerializer(serializers.Serializer):
         return attrs
 
 class SocialLoginSerializer(serializers.Serializer):
-    access_token = serializers.CharField(required=True)
+    access_token = serializers.CharField(
+        required=True, 
+        help_text="소셜 서비스(카카오/구글)에서 발급받은 액세스 토큰입니다."
+    )

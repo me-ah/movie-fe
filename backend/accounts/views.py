@@ -1,22 +1,31 @@
 import os
 import requests
-from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth import get_user_model
 from rest_framework import status, generics, views
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
+from drf_spectacular.utils import extend_schema
 from .serializers import UserRegistrationSerializer, ChangePasswordSerializer, SocialLoginSerializer
 
 User = get_user_model()
 
 class RegisterView(generics.CreateAPIView):
+    """
+    자체 회원가입 API
+    """
     queryset = User.objects.all()
     permission_classes = (AllowAny,)
     serializer_class = UserRegistrationSerializer
 
 class ChangePasswordView(views.APIView):
+    """
+    비밀번호 변경 API (자체 회원 전용)
+    """
     permission_classes = (IsAuthenticated,)
+    serializer_class = ChangePasswordSerializer
 
+    @extend_schema(request=ChangePasswordSerializer)
     def post(self, request):
         user = request.user
         if user.login_type != 'email':
@@ -25,10 +34,10 @@ class ChangePasswordView(views.APIView):
         serializer = ChangePasswordSerializer(data=request.data)
 
         if serializer.is_valid():
-            if not user.check_password(serializer.data.get("old_password")):
+            if not user.check_password(serializer.validated_data.get("old_password")):
                 return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
 
-            user.set_password(serializer.data.get("new_password"))
+            user.set_password(serializer.validated_data.get("new_password"))
             user.save()
             return Response({
                 'status': 'success',
@@ -38,12 +47,19 @@ class ChangePasswordView(views.APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class KakaoLoginView(views.APIView):
+    """
+    카카오 소셜 로그인 API
+    """
     permission_classes = (AllowAny,)
+    serializer_class = SocialLoginSerializer
 
+    @extend_schema(request=SocialLoginSerializer)
     def post(self, request):
-        access_token = request.data.get('access_token')
-        if not access_token:
-            return Response({'error': 'Access token required'}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = SocialLoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        access_token = serializer.validated_data.get('access_token')
 
         # Verify token with Kakao
         user_info_url = "https://kapi.kakao.com/v2/user/me"
@@ -55,7 +71,7 @@ class KakaoLoginView(views.APIView):
 
         user_info = user_info_response.json()
         kakao_id = user_info.get('id')
-        kakao_account = user_info.get('kakao_account')
+        kakao_account = user_info.get('kakao_account', {})
         email = kakao_account.get('email')
         nickname = kakao_account.get('profile', {}).get('nickname', '')
 
@@ -69,9 +85,9 @@ class KakaoLoginView(views.APIView):
         except User.DoesNotExist:
             # Create new user
             user = User.objects.create_user(
-                username=f"kakao_{kakao_id}", # Ensure unique username
+                username=f"kakao_{kakao_id}",
                 email=email,
-                password=None, # Unusable password
+                password=None,
                 first_name=nickname,
                 login_type='kakao'
             )
@@ -84,12 +100,19 @@ class KakaoLoginView(views.APIView):
         })
 
 class GoogleLoginView(views.APIView):
+    """
+    구글 소셜 로그인 API
+    """
     permission_classes = (AllowAny,)
+    serializer_class = SocialLoginSerializer
 
+    @extend_schema(request=SocialLoginSerializer)
     def post(self, request):
-        access_token = request.data.get('access_token')
-        if not access_token:
-            return Response({'error': 'Access token required'}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = SocialLoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        access_token = serializer.validated_data.get('access_token')
         
         # Google user info endpoint
         user_info_url = "https://www.googleapis.com/oauth2/v3/userinfo"
