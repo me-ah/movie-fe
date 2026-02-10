@@ -17,4 +17,5 @@ urlpatterns = [
     path('login/kakao/', KakaoLoginView.as_view(), name='kakao_login'),
     path('login/google/', GoogleLoginView.as_view(), name='google_login'),
     path('mypage/', MyPageView.as_view(), name='user_mypage'),
+    
 ]
