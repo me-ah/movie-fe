@@ -313,3 +313,54 @@ class ReviewAPITest(TestCase):
         response = self.client.get('/api/review/9999/comment/list/')
         self.assertEqual(response.status_code, 404)
         print('✅ [PASS] 없는 리뷰 댓글 조회 → 404')
+
+    # ========== 22. 댓글 수정 성공 → 200 ==========
+    def test_comment_update_success(self):
+        """본인 댓글 수정 성공"""
+        refresh = RefreshToken.for_user(self.user2)  # user2가 댓글 작성자임 (setUp 확인 필요하지만 여기서는 새로 생성)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+        # 댓글 생성 (user2가 작성)
+        comment = ReviewComment.objects.create(user=self.user2, review=self.review1, content='원본 댓글')
+
+        response = self.client.put(f'/api/review/{self.review1.id}/comment/{comment.id}/update/', {
+            'content': '수정된 댓글'
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['message'], '댓글이 성공적으로 수정되었습니다')
+        self.assertEqual(response.data['comment']['content'], '수정된 댓글')
+        print('✅ [PASS] 댓글 수정 → 200')
+
+    # ========== 23. 타인 댓글 수정 시도 → 403 ==========
+    def test_comment_update_forbidden(self):
+        """타인의 댓글 수정 시도 → 403"""
+        refresh = RefreshToken.for_user(self.user1)  # user1이 user2의 댓글 수정 시도
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+        # 댓글 생성 (user2가 작성)
+        comment = ReviewComment.objects.create(user=self.user2, review=self.review1, content='원본 댓글')
+
+        response = self.client.put(f'/api/review/{self.review1.id}/comment/{comment.id}/update/', {
+            'content': '해킹 시도'
+        })
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data['error'], '본인의 댓글만 수정할 수 있습니다.')
+        print('✅ [PASS] 타인 댓글 수정 시도 → 403')
+
+    # ========== 24. 경로 불일치 (리뷰ID 다름) → 400 ==========
+    def test_comment_update_path_mismatch(self):
+        """URL의 review_id와 실제 댓글의 review가 다를 때 → 400"""
+        refresh = RefreshToken.for_user(self.user2)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+        comment = ReviewComment.objects.create(user=self.user2, review=self.review1, content='원본 댓글')
+        
+        # 다른 리뷰 ID(999)로 요청
+        response = self.client.put(f'/api/review/999/comment/{comment.id}/update/', {
+            'content': '수정'
+        })
+        # get_object_or_404를 먼저 호출하면 404일 수도 있으나, view 구현 순서에 따라 400 또는 404
+        # 현재 구현: review_id 검증 전에 comment_id로 먼저 찾음 -> 찾았는데 review_id 안 맞으면 400
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.data['error'], '잘못된 경로입니다. (리뷰 ID 불일치)')
+        print('✅ [PASS] 경로 불일치 → 400')

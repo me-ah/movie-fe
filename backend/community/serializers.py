@@ -21,6 +21,16 @@ class ReviewCommentSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'user', 'review', 'created_at']
 
 
+# ========== 댓글 수정용 ==========
+class ReviewCommentUpdateSerializer(serializers.ModelSerializer):
+    """댓글 수정 시리얼라이저 (content만)"""
+    content = serializers.CharField()
+
+    class Meta:
+        model = ReviewComment
+        fields = ['content']
+
+
 # ========== 좋아요 필드 Mixin ==========
 class LikeFieldsMixin(serializers.Serializer):
     """like_users_count, is_liked 공통 필드"""
