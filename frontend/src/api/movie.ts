@@ -49,17 +49,14 @@ function asArray<T>(v: T | T[] | undefined | null): T[] {
   if (!v) return [];
   return Array.isArray(v) ? v : [v];
 }
-
 async function getMoviePage(movieId: string): Promise<
-  MoviePageResponse & {
-    actors: ActorItem[];
-    reviews: ReviewItem[];
-  }
+  MoviePageResponse & { actors: ActorItem[]; reviews: ReviewItem[] }
 > {
-    const res = await api.post<MoviePageResponse>(
-    "/home/detail/",
-    { movieId }   // 👈 body
-    );
+  const res = await api.post<MoviePageResponse>("/home/detail/", {
+    // id: Number(movieId), 
+     id: 1167, 
+  });
+
   const data = res.data;
 
   return {
@@ -68,6 +65,7 @@ async function getMoviePage(movieId: string): Promise<
     reviews: asArray<ReviewItem>(data.ReviewItem),
   };
 }
+
 
 export const movieApi = {
   getMoviePage,

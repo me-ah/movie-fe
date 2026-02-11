@@ -9,8 +9,10 @@ import { Heart, Share2, Play } from "lucide-react";
 import RecommendsRow, { RecommendItem as RecommendRowItem } from "./RecommendsRow";
 import MovieInfoTab from "./MovieInfoTab";
 import MovieReviewsTab, { ReviewItem } from "./MovieReviewsTab";
+import MovieShareDialog from "./MovieShareDialog";
 
 import { movieApi } from "@/api/movie";
+import { parseOttKo } from "./ott";
 
 // 탭용 상세
 type MovieDetail = {
@@ -80,59 +82,85 @@ export default function MovieDetailClient({ movieId }: { movieId: string }) {
 
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [trailerOpen, setTrailerOpen] = useState(false);
+  const [currentMovieId, setCurrentMovieId] = useState(movieId);
 
   useEffect(() => {
-    let mounted = true;
+      setCurrentMovieId(movieId);
+    }, [movieId]);
 
-    async function fetchOnce() {
-      setLoading(true);
-      setErr(null);
+    useEffect(() => {
+      let mounted = true;
 
-      try {
-        // ✅ 여기서 "한 번"만 호출하는게 맞음 (UI 컴포넌트는 apiClient를 직접 몰라도 됨)
-        const res = await movieApi.getMoviePage(movieId);
-        if (!mounted) return;
+      async function fetchOnce() {
+        setLoading(true);
+        setErr(null);
 
-        const final = normalizeMoviePageData(res);
+        try {
+          const res = await movieApi.getMoviePage(currentMovieId);
+          if (!mounted) return;
 
-        setPageData(final.page);
-        setMovieDetail(final.movieDetail);
-        setReviews(final.reviews);
-        setRecommends(final.recommends);
-      } catch (e) {
-        if (!mounted) return;
-        setErr("영화 정보를 불러오지 못했습니다.");
-      } finally {
-        if (!mounted) return;
-        setLoading(false);
+          const final = normalizeMoviePageData(res);
+          setPageData(final.page);
+          setMovieDetail(final.movieDetail);
+          setReviews(final.reviews);
+          setRecommends(final.recommends);
+
+          // 선택 바뀌면 맨 위로
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } catch (e) {
+          if (!mounted) return;
+          setErr("영화 정보를 불러오지 못했습니다.");
+        } finally {
+          if (!mounted) return;
+          setLoading(false);
+        }
       }
-    }
 
-    fetchOnce();
-    return () => {
-      mounted = false;
-    };
-  }, [movieId]);
+      fetchOnce();
+      return () => {
+        mounted = false;
+      };
+    }, [currentMovieId]);
 
   const metaText = useMemo(() => {
     if (!pageData) return "";
-    const rating = pageData.rank != null ? `${pageData.rank}` : "-";
-    const year = pageData.year ?? "-";
 
-    const runtimeText =
-      pageData.runtime == null
-        ? "-"
-        : typeof pageData.runtime === "number"
-          ? `${Math.floor(pageData.runtime / 60)}시간 ${pageData.runtime % 60}분`
+    // ⭐ 별점 (소수점 첫째 자리)
+    const rating =
+      pageData.rank != null
+        ? Number(pageData.rank).toFixed(1)
+        : "";
+
+    // 📅 년도
+    const year =
+      pageData.year != null && pageData.year !== ""
+        ? `${pageData.year}년`
+        : "";
+
+    // ⏱ 러닝타임
+    let runtimeText = "";
+
+    if (pageData.runtime != null && pageData.runtime !== "") {
+      const n =
+        typeof pageData.runtime === "number"
+          ? pageData.runtime
           : /^\d+$/.test(String(pageData.runtime))
-            ? (() => {
-                const n = Number(pageData.runtime);
-                return `${Math.floor(n / 60)}시간 ${n % 60}분`;
-              })()
-            : String(pageData.runtime);
+            ? Number(pageData.runtime)
+            : null;
 
-    return `⭐ ${rating}  •  ${year}  •  ${runtimeText}`;
+      if (n != null) {
+        runtimeText = `${Math.floor(n / 60)}시간 ${n % 60}분`;
+      }
+    }
+
+    // 공백 제거 + 존재하는 것만 •로 연결
+    return [rating && `⭐ ${rating}`, year, runtimeText]
+      .filter(Boolean)
+      .join("  •  ");
   }, [pageData]);
+
 
   if (loading) {
     return (
@@ -169,31 +197,39 @@ export default function MovieDetailClient({ movieId }: { movieId: string }) {
       <main className="mx-auto max-w-6xl px-6 pb-16 pt-10">
         <section className="grid grid-cols-1 gap-6 lg:grid-cols-2">
           <Card className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/20">
-            <div className="relative aspect-video w-full">
-              <Image src={heroImage} alt={title} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />
+            <div className="relative aspect-[2/3] w-full max-w-md mx-auto">
+              <Image
+                src={heroImage || "/images/profile.jpg"}
+                alt={title}
+                fill
+                className="object-contain bg-zinc-950"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-zinc-950/30 to-transparent" />
               <div className="absolute inset-0 flex items-center justify-center">
-                <Button className="border border-white/15 bg-white/10 hover:bg-white/20">
+                <Button
+                  className="border border-white/15 bg-white/10 hover:bg-white/20"
+                  onClick={() => setTrailerOpen(true)}
+                >
                   <Play className="mr-2 h-4 w-4" />
                   Trailer
                 </Button>
+
               </div>
             </div>
           </Card>
 
           <Card className="rounded-2xl border border-zinc-800 bg-zinc-900/20 p-6">
-            <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
-            <div className="mt-2 text-sm text-zinc-400">{metaText}</div>
+            <h1 className="text-3xl font-semibold tracking-tight text-zinc-300">{title}</h1>
+            <div className="mt-2 text-sm text-zinc-300">{metaText}</div>
 
             <div className="mt-5 flex items-center gap-2">
                {(pageData.ott_list ?? []).length ? (
                     pageData.ott_list!.map((ott) => (
-                    <Button
-                        key={ott}
-                        className="bg-blue-500 hover:bg-blue-600"
-                    >
-                        {ott.toUpperCase()}
-                    </Button>
+                    <Button key={ott} className="bg-blue-500 hover:bg-blue-600">
+                    {parseOttKo(ott)}
+                  </Button>
+
                     ))
                 ) : (
                     <span className="text-sm text-zinc-400">제공 OTT 정보 없음</span>
@@ -201,15 +237,20 @@ export default function MovieDetailClient({ movieId }: { movieId: string }) {
 
               <Button
                 variant="secondary"
-                className="border border-zinc-800 bg-zinc-900 hover:bg-zinc-800"
+                className="border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300"
                 onClick={() => setLiked((v) => !v)}
               >
                 <Heart className={liked ? "h-4 w-4 text-red-400" : "h-4 w-4"} />
               </Button>
 
-              <Button variant="secondary" className="border border-zinc-800 bg-zinc-900 hover:bg-zinc-800">
-                <Share2 className="h-4 w-4" />
-              </Button>
+              <Button
+            variant="secondary"
+            className="border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300"
+            onClick={() => setShareOpen(true)}
+          >
+            <Share2 className="h-4 w-4" />
+          </Button>
+
             </div>
 
             <div className="mt-6 border-b border-zinc-800">
@@ -245,10 +286,40 @@ export default function MovieDetailClient({ movieId }: { movieId: string }) {
           <h2 className="text-xl font-semibold">"{title}"가 재밌다면?</h2>
           <div className="mt-4">
             {/* ✅ 이제 타입 정확히 맞음 */}
-            <RecommendsRow items={recommends} />
+            <RecommendsRow
+          items={recommends}
+          onSelect={(id) => setCurrentMovieId(id)}
+        />
           </div>
         </section>
       </main>
+
+
+      <MovieShareDialog
+        open={shareOpen}
+        onOpenChange={setShareOpen}
+        movieId={movieId}
+      />
+
+      {trailerOpen && pageData.trailer && (
+  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80">
+    <div className="relative w-full max-w-3xl aspect-video">
+      <iframe
+        src={pageData.trailer}
+        className="h-full w-full rounded-xl"
+        allow="autoplay; encrypted-media"
+        allowFullScreen
+      />
+      <button
+        onClick={() => setTrailerOpen(false)}
+        className="absolute -top-10 right-0 text-white"
+      >
+        ✕
+      </button>
+    </div>
+  </div>
+)}
+
     </div>
   );
 }
