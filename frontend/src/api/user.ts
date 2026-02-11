@@ -53,4 +53,4 @@ export async function getMyPage() {
 export async function patchMe(payload: UpdateMePayload) {
 	const res = await api.patch("/accounts/mypage/", payload);
 	return res.data;
-}
+}  
