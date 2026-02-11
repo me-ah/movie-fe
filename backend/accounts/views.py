@@ -17,7 +17,8 @@ from .serializers import (
     LoginResponseSerializer,
     MyPageRequestSerializer,
     MyPageResponseSerializer,
-    WatchHistorySerializer
+    WatchHistorySerializer,
+    UserProfileUpdateSerializer
 )
 from movies.models import Movie
 from .models import UserMovieHistory, UserMyList
@@ -52,6 +53,32 @@ class ChangePasswordView(views.APIView):
             return Response({'status': 'success', 'message': 'Password updated successfully'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+class UserProfileUpdateView(generics.UpdateAPIView):
+    """
+    유저 프로필 수정 API (PATCH)
+    """
+    permission_classes = (IsAuthenticated,)
+    serializer_class = UserProfileUpdateSerializer
+
+    def get_object(self):
+        return self.request.user
+
+    @extend_schema(request=UserProfileUpdateSerializer, responses={200: UserProfileUpdateSerializer})
+    def patch(self, request, *args, **kwargs):
+        return self.partial_update(request, *args, **kwargs)
+
+class UserProfileDeleteView(views.APIView):
+    """
+    회원 탈퇴 API (DELETE)
+    """
+    permission_classes = (IsAuthenticated,)
+
+    @extend_schema(responses={204: None})
+    def delete(self, request):
+        user = request.user
+        user.delete() # CASCADE 설정에 의해 관련 기록 자동 삭제
+        return Response({"message": "회원 탈퇴가 완료되었습니다."}, status=status.HTTP_204_NO_CONTENT)
+
 class MyPageView(views.APIView):
     """
     마이페이지 API
@@ -65,14 +92,12 @@ class MyPageView(views.APIView):
         user = request.user
         request_userid = request.data.get('userid')
 
-        # 1. 필수 파라미터 누락 체크
         if request_userid is None:
             return Response({
                 "error": "MISSING_PARAMETER",
                 "message": "userid 파라미터가 누락되었습니둥"
             }, status=status.HTTP_400_BAD_REQUEST)
 
-        # 2. 유저 일치 여부 확인 (인증된 토큰의 유저와 요청한 userid 비교)
         try:
             if int(user.id) != int(request_userid):
                 return Response({
@@ -86,7 +111,6 @@ class MyPageView(views.APIView):
             }, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            # 3. 데이터 조립
             userdata = {
                 "userid": str(user.id),
                 "username": user.username,
@@ -94,14 +118,8 @@ class MyPageView(views.APIView):
                 "firstname": user.first_name,
                 "lastname": user.last_name,
             }
-
-            # 시청 시간 합산
             watchtime_sum = UserMovieHistory.objects.filter(user=user).aggregate(Sum('watch_time'))['watch_time__sum'] or 0
-
-            # 찜 목록 개수
             usermylist_count = UserMyList.objects.filter(user=user).count()
-
-            # 시청 기록 영화 (최근 10개)
             record_movies_qs = UserMovieHistory.objects.filter(user=user).select_related('movie').order_by('-watched_at')[:10]
             recordmovie = {}
             for history in record_movies_qs:
@@ -109,8 +127,6 @@ class MyPageView(views.APIView):
                     "recordmovie_name": history.movie.title,
                     "recordmovie_poster": history.movie.poster_path
                 }
-
-            # 찜한 영화 (최근 10개)
             mylist_movies_qs = UserMyList.objects.filter(user=user).select_related('movie').order_by('-created_at')[:10]
             mylistmovie = {}
             for item in mylist_movies_qs:
@@ -118,7 +134,6 @@ class MyPageView(views.APIView):
                     "mylistmovie_name": item.movie.title,
                     "mylistmovie_poster": item.movie.poster_path
                 }
-
             response_data = {
                 "userdata": userdata,
                 "watchtime": str(watchtime_sum),
@@ -126,9 +141,7 @@ class MyPageView(views.APIView):
                 "recordmovie": recordmovie,
                 "mylistmovie": mylistmovie
             }
-
             return Response(response_data, status=status.HTTP_200_OK)
-
         except Exception as e:
             return Response({
                 "error": "SERVER_ERROR",
@@ -183,52 +196,16 @@ class GoogleLoginView(views.APIView):
         refresh = RefreshToken.for_user(user)
         return Response({"message": "로그인 성공", "user": {"userid": user.id, "username": user.username, "useremail": user.email, "firstname": user.first_name, "lastname": user.last_name}, "token": str(refresh.access_token), "refresh": str(refresh)})
 
-
-# ========== Watch History View ==========
 class WatchHistoryView(views.APIView):
-    """
-    POST /api/accounts/watch-history/
-    영화 체류 시간을 저장합니다.
-    """
     permission_classes = (IsAuthenticated,)
     serializer_class = WatchHistorySerializer
-
     @extend_schema(request=WatchHistorySerializer)
     def post(self, request):
         serializer = WatchHistorySerializer(data=request.data)
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        movie_id = serializer.validated_data['movie_id']
-        watch_time = serializer.validated_data['watch_time']
-
-        # ---- 영화 조회 (없으면 404) ----
-        try:
-            movie = Movie.objects.get(movie_id=movie_id)
-        except Movie.DoesNotExist:
-            return Response(
-                {"error": "해당 영화를 찾을 수 없습니다."},
-                status=status.HTTP_404_NOT_FOUND
-            )
-
-        # ---- 3초 미만 시청 시 무시 ----
-        if watch_time < 3:
-            return Response({
-                "message": "시청 시간이 짧아 기록되지 않았습니둥.",
-                "movie_id": movie_id,
-                "watch_time": watch_time
-            }, status=status.HTTP_200_OK)
-        if watch_time > 50:
-            watch_time = 50
-        # ---- 시청 기록 저장 (save()에서 장르 선호도 자동 업데이트) ----
-        UserMovieHistory.objects.create(
-            user=request.user,
-            movie=movie,
-            watch_time=watch_time
-        )
-
-        return Response({
-            "message": "시청 기록이 저장되었습니다.",
-            "movie_id": movie_id,
-            "watch_time": watch_time
-        }, status=status.HTTP_201_CREATED)
+        if not serializer.is_valid(): return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        movie_id, watch_time = serializer.validated_data['movie_id'], serializer.validated_data['watch_time']
+        try: movie = Movie.objects.get(movie_id=movie_id)
+        except Movie.DoesNotExist: return Response({"error": "해당 영화를 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+        if watch_time < 3: return Response({"message": "시청 시간이 짧아 기록되지 않았습니둥.", "movie_id": movie_id, "watch_time": watch_time}, status=status.HTTP_200_OK)
+        UserMovieHistory.objects.create(user=request.user, movie=movie, watch_time=watch_time)
+        return Response({"message": "시청 기록이 저장되었습니다.", "movie_id": movie_id, "watch_time": watch_time}, status=status.HTTP_201_CREATED)

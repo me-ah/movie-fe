@@ -121,6 +121,16 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 class MyPageRequestSerializer(serializers.Serializer):
     userid = serializers.IntegerField()
 
+class UserProfileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ('email', 'first_name', 'last_name')
+        extra_kwargs = {
+            'email': {'required': False},
+            'first_name': {'required': False},
+            'last_name': {'required': False},
+        }
+
 class MovieMiniSerializer(serializers.Serializer):
     """Simplified movie info for MyPage"""
     name = serializers.CharField(source='title')
