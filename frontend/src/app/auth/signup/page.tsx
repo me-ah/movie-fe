@@ -325,7 +325,6 @@ export default function SignUp() {
 						{loading ? "가입 중..." : "회원가입"}
 					</Button>
 				</div>
-
 				<div className="mt-6 text-center text-sm text-zinc-400">
 					이미 계정이 있으신가요?{" "}
 					<Link
