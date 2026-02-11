@@ -7,7 +7,7 @@ from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 
 from .models import Review
-from .serializers import ReviewListSerializer, ReviewDetailSerializer, CommunityReviewCreateSerializer
+from .serializers import ReviewListSerializer, ReviewDetailSerializer, CommunityReviewCreateSerializer, CommunityReviewUpdateSerializer
 
 
 # ========== 페이지네이션 설정 ==========
@@ -132,3 +132,38 @@ class ReviewCreateView(APIView):
             "message": "게시글이 성공적으로 작성되었습니다.",
             "post": response_serializer.data
         }, status=status.HTTP_201_CREATED)
+
+
+# ========== 리뷰 수정 (PATCH) ==========
+class ReviewUpdateView(APIView):
+    """
+    PATCH /api/review/{review_id}/update/
+    리뷰 수정 (작성자 본인만 가능)
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="리뷰 수정",
+        description="본인이 작성한 리뷰를 수정합니다. (PATCH 부분 수정)",
+        request=CommunityReviewUpdateSerializer,
+        responses={200: ReviewListSerializer}
+    )
+    def patch(self, request, review_id):
+        review = get_object_or_404(Review, id=review_id)
+
+        # ---- 작성자 검증 ----
+        if review.user != request.user:
+            return Response({"error": "본인의 게시글만 수정할 수 있습니다."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = CommunityReviewUpdateSerializer(review, data=request.data, partial=True)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        updated_review = serializer.save()
+
+        # ---- 응답 데이터 생성 ----
+        response_serializer = ReviewListSerializer(updated_review, context={'request': request})
+        return Response({
+            "message": "게시글 수정 완료",
+            "post": response_serializer.data
+        }, status=status.HTTP_200_OK)

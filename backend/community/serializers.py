@@ -49,6 +49,19 @@ class CommunityReviewCreateSerializer(serializers.ModelSerializer):
         fields = ['title', 'movie_title', 'rank', 'content']
 
 
+# ========== 리뷰 수정용 ==========
+class CommunityReviewUpdateSerializer(serializers.ModelSerializer):
+    """리뷰 수정 시리얼라이저 (PATCH)"""
+    title = serializers.CharField(required=False)
+    movie_title = serializers.CharField(required=False)
+    rank = serializers.IntegerField(required=False)
+    content = serializers.CharField(required=False)
+
+    class Meta:
+        model = Review
+        fields = ['title', 'movie_title', 'rank', 'content']
+
+
 # ========== 리뷰 응답용 (작성/목록 공통) ==========
 class ReviewListSerializer(LikeFieldsMixin, serializers.ModelSerializer):
     """리뷰 목록/작성 응답 시리얼라이저"""

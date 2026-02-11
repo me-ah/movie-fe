@@ -166,3 +166,45 @@ class ReviewAPITest(TestCase):
         self.assertEqual(response.status_code, 400)
         print('✅ [PASS] content 누락 → 400')
 
+    # ========== 11. 리뷰 수정 (PATCH) 성공 → 200 ==========
+    def test_review_update_success(self):
+        """작성자 본인이 리뷰 수정 (PATCH)"""
+        refresh = RefreshToken.for_user(self.user1)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+        # review1은 user1이 작성함
+        response = self.client.patch(f'/api/review/{self.review1.id}/update/', {
+            'title': '제목 수정됨',
+            'rank': 10
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['message'], '게시글 수정 완료')
+        post = response.data['post']
+        self.assertEqual(post['title'], '제목 수정됨')
+        self.assertEqual(post['rank'], 10)
+        self.assertEqual(post['movie_title'], '어벤져스 1')  # 기존 데이터 유지 확인
+        print('✅ [PASS] 리뷰 수정 (PATCH) → 200 + 데이터 변경 확인')
+
+    # ========== 12. 타인의 글 수정 시도 → 403 ==========
+    def test_review_update_forbidden(self):
+        """타인의 리뷰 수정 시도 → 403"""
+        refresh = RefreshToken.for_user(self.user2)  # user2가 user1의 글 수정 시도
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+        response = self.client.patch(f'/api/review/{self.review1.id}/update/', {
+            'title': '해킹 시도'
+        })
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data['error'], '본인의 게시글만 수정할 수 있습니다.')
+        print('✅ [PASS] 타인 글 수정 시도 → 403')
+
+    # ========== 13. 미인증 수정 시도 → 401 ==========
+    def test_review_update_unauthenticated(self):
+        """미인증 상태로 수정 시도 → 401"""
+        response = self.client.patch(f'/api/review/{self.review1.id}/update/', {
+            'title': '몰래 수정'
+        })
+        self.assertEqual(response.status_code, 401)
+        print('✅ [PASS] 미인증 수정 시도 → 401')
+
+
