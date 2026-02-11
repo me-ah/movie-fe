@@ -16,9 +16,7 @@ CATEGORY_EXAMPLE = {
     "movies": [MOVIE_EXAMPLE for _ in range(15)]
 }
 
-# --- 상세 페이지용 ---
-class MovieDetailRequestSerializer(serializers.Serializer):
-    id = serializers.IntegerField(help_text="조회할 영화의 PK")
+# --- 상세 페이지 및 리뷰용 ---
 
 class MovieMiniSerializer(serializers.Serializer):
     def to_representation(self, instance):
@@ -37,9 +35,11 @@ class ReviewSerializer(serializers.ModelSerializer):
         fields = ['id', 'author', 'rating', 'content', 'createdAt']
 
 class ReviewCreateSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(required=False, help_text="리뷰를 작성할 영화의 PK (POST 요청 시 필수)")
+
     class Meta:
         model = MovieReview
-        fields = ['rating', 'content']
+        fields = ['id', 'rating', 'content']
 
 class MovieDetailResponseSerializer(serializers.Serializer):
     trailer = serializers.URLField()
@@ -50,10 +50,11 @@ class MovieDetailResponseSerializer(serializers.Serializer):
     runtime = serializers.CharField(allow_null=True)
     ott_list = serializers.ListField(child=serializers.CharField())
     MovieDetail = serializers.DictField()
-    ReviewItem = ReviewSerializer(many=True)
+    ReviewItem = serializers.ListField(child=serializers.JSONField(), help_text="리뷰 목록 (별도 API 조회를 위해 비어 있음)")
     recommend_list = MovieMiniSerializer(many=True)
 
 # --- 홈 메인/서브용 ---
+
 class HomeMovieSerializer(serializers.Serializer):
     def to_representation(self, instance):
         return {
@@ -76,8 +77,8 @@ class HomeMovieSerializer(serializers.Serializer):
     ]
 )
 class MainResponseSerializer(serializers.Serializer):
-    user = serializers.DictField(help_text="인증된 유저 정보")
-    main = serializers.ListField(child=serializers.DictField(), help_text="메인 10개 영화")
+    user = serializers.DictField()
+    main = serializers.ListField(child=serializers.DictField())
 
 class CategoryResponseSerializer(serializers.Serializer):
     category_title = serializers.CharField()
@@ -95,7 +96,4 @@ class CategoryResponseSerializer(serializers.Serializer):
     ]
 )
 class SubResponseSerializer(serializers.Serializer):
-    sub = serializers.ListField(
-        child=CategoryResponseSerializer(),
-        help_text="맞춤 카테고리 30개 리스트"
-    )
+    sub = serializers.ListField(child=CategoryResponseSerializer())

@@ -2,7 +2,7 @@ from rest_framework import views, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
-from django.db.models import Avg
+from django.db.models import Avg, Case, When
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from movies.models import Movie
 from .models import HomeCategory, MovieReview
@@ -10,7 +10,6 @@ from .serializers import (
     HomeMovieSerializer, 
     MainResponseSerializer, 
     SubResponseSerializer,
-    MovieDetailRequestSerializer,
     MovieDetailResponseSerializer,
     MovieMiniSerializer,
     ReviewSerializer,
@@ -18,7 +17,7 @@ from .serializers import (
 )
 
 def update_movie_review_average(movie):
-    """영화의 평균 리뷰 점수를 갱신하는 헬퍼 함수 (리뷰가 없으면 TMDB 평점 유지)"""
+    """영화의 평균 리뷰 점수를 갱신하는 헬퍼 함수"""
     avg_rating = movie.reviews.aggregate(Avg('rating'))['rating__avg']
     if avg_rating is not None:
         movie.review_average = round(avg_rating, 1)
@@ -70,55 +69,76 @@ class SubView(views.APIView):
 
 class MovieDetailView(views.APIView):
     """
-    영화 상세 정보 API (POST)
+    영화 상세 정보 API
+    GET /api/home/detail/?id={movie_id}
     """
     permission_classes = [AllowAny]
-    serializer_class = MovieDetailRequestSerializer
+    serializer_class = MovieDetailResponseSerializer
 
     @extend_schema(
-        request=MovieDetailRequestSerializer,
+        parameters=[OpenApiParameter("id", type=int, description="영화의 PK", required=True)],
         responses={200: MovieDetailResponseSerializer}
     )
-    def post(self, request):
-        movie_id = request.data.get('id')
+    def get(self, request):
+        movie_id = request.query_params.get('id')
         if not movie_id:
-            return Response({"error": "Movie ID required in request body"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Movie ID required (?id=...)"}, status=status.HTTP_400_BAD_REQUEST)
         
         movie = get_object_or_404(Movie, id=movie_id)
         
-        related_category = HomeCategory.objects.filter(movies=movie).first()
+        movie_genres = sorted([genre.name for genre in movie.genres.all()])
+        exact_genre_key = "|".join(movie_genres)
+        related_category = HomeCategory.objects.filter(genre_key=exact_genre_key).first()
+        if not related_category: related_category = HomeCategory.objects.filter(movies=movie).first()
+
         recommend_list = []
         if related_category:
-            recommend_list = related_category.movies.exclude(id=movie.id)[:10]
+            recommend_list = related_category.movies.exclude(id=movie.id).order_by('-vote_average')[:10]
         else:
-            recommend_list = Movie.objects.filter(genres__in=movie.genres.all()).exclude(id=movie.id).distinct()[:10]
+            recommend_list = Movie.objects.filter(genres__in=movie.genres.all()).exclude(id=movie.id).distinct().order_by('-vote_average')[:10]
 
-        reviews = movie.reviews.all().select_related('author')[:10]
         year = str(movie.release_date.year) if movie.release_date else "미상"
-        
         response_data = {
             "trailer": movie.embed_url if movie.embed_url else movie.youtube_key,
-            "title": movie.title,
-            "rank": str(movie.review_average),
-            "year": year,
-            "poster": movie.poster_path,
-            "runtime": None,
-            "ott_list": movie.ott_providers,
+            "title": movie.title, "rank": str(movie.review_average), "year": year,
+            "poster": movie.poster_path, "runtime": None, "ott_list": movie.ott_providers,
             "MovieDetail": {
-                "overview": movie.overview,
-                "director": None,
-                "genres": [g.name for g in movie.genres.all()],
+                "overview": movie.overview, "director": None, "genres": movie_genres,
                 "year": int(year) if year.isdigit() else 0
             },
-            "ReviewItem": ReviewSerializer(reviews, many=True).data,
-            "recommend_list": MovieMiniSerializer(recommend_list, many=True).data
+            "ReviewItem": [], "recommend_list": MovieMiniSerializer(recommend_list, many=True).data
         }
         return Response(response_data, status=status.HTTP_200_OK)
 
-class MovieReviewCreateView(views.APIView):
-    permission_classes = [IsAuthenticated]
-    serializer_class = ReviewCreateSerializer
-    def post(self, request, movie_id):
+class MovieReviewListView(views.APIView):
+    """
+    영화 리뷰 목록 조회 및 작성 API
+    GET /api/home/review/?id={movie_id} (최신순 조회)
+    POST /api/home/review/ (리뷰 작성)
+    """
+    def get_permissions(self):
+        if self.request.method == 'GET': return [AllowAny()]
+        return [IsAuthenticated()]
+
+    @extend_schema(
+        parameters=[OpenApiParameter("id", type=int, description="영화의 PK", required=True)],
+        responses={200: ReviewSerializer(many=True)}
+    )
+    def get(self, request):
+        movie_id = request.query_params.get('id')
+        if not movie_id: return Response({"error": "Movie ID required (?id=...)"}, status=status.HTTP_400_BAD_REQUEST)
+        movie = get_object_or_404(Movie, id=movie_id)
+        reviews = movie.reviews.all().select_related('author').order_by('-created_at')
+        return Response(ReviewSerializer(reviews, many=True).data)
+
+    @extend_schema(
+        request=ReviewCreateSerializer,
+        responses={201: ReviewSerializer},
+        description="Body에 id(영화PK)를 포함해야 합니다. 예: {'id': 1, 'rating': 9, 'content': '...'}"
+    )
+    def post(self, request):
+        movie_id = request.data.get('id')
+        if not movie_id: return Response({"error": "Movie id required in request body"}, status=status.HTTP_400_BAD_REQUEST)
         movie = get_object_or_404(Movie, id=movie_id)
         if MovieReview.objects.filter(movie=movie, author=request.user).exists():
             return Response({"error": "이미 리뷰를 작성하셨습니다."}, status=status.HTTP_400_BAD_REQUEST)
@@ -131,7 +151,6 @@ class MovieReviewCreateView(views.APIView):
 
 class MovieReviewDetailView(views.APIView):
     permission_classes = [IsAuthenticated]
-    serializer_class = ReviewCreateSerializer
     def put(self, request, review_id):
         review = get_object_or_404(MovieReview, id=review_id, author=request.user)
         serializer = ReviewCreateSerializer(review, data=request.data, partial=True)

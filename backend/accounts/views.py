@@ -211,6 +211,15 @@ class WatchHistoryView(views.APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
+        # ---- 3초 미만 시청 시 무시 ----
+        if watch_time < 3:
+            return Response({
+                "message": "시청 시간이 짧아 기록되지 않았습니둥.",
+                "movie_id": movie_id,
+                "watch_time": watch_time
+            }, status=status.HTTP_200_OK)
+        if watch_time > 50:
+            watch_time = 50
         # ---- 시청 기록 저장 (save()에서 장르 선호도 자동 업데이트) ----
         UserMovieHistory.objects.create(
             user=request.user,
