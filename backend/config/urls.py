@@ -13,4 +13,7 @@ urlpatterns = [
     
     # Movies API
     path("api/movies/", include("movies.urls")),
+    
+    # Home API
+    path("api/home/", include("home.urls")),
 ]
