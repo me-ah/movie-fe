@@ -249,3 +249,29 @@ class ShortsLikeView(APIView):
         }, status=status.HTTP_200_OK)
 
 
+# ========== Shorts View Count View ==========
+class ShortsViewCountView(APIView):
+    """
+    POST /api/movies/shorts/{movie_id}/view/
+    Shorts 조회수 1 증가 (로그인 불필요)
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request, movie_id):
+        # ---- 영화 조회 (없으면 404) ----
+        movie = get_object_or_404(Movie, movie_id=movie_id)
+
+        # ---- 조회수 +1 (원자적 연산) ----
+        movie.view_count = F('view_count') + 1
+        movie.save(update_fields=['view_count'])
+        movie.refresh_from_db()
+
+        # ---- 응답 ----
+        return Response({
+            "movie_id": movie_id,
+            "current_view_count": movie.view_count,
+            "message": "조회수가 성공적으로 집계되었습니다."
+        }, status=status.HTTP_200_OK)
+
+
+
