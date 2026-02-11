@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Genre, Movie
+from .models import Genre, Movie, Comment
 
 
 # ========== Genre Serializer ==========
@@ -36,9 +36,26 @@ class MovieShortsSerializer(serializers.ModelSerializer):
         ]
 
     def get_is_liked(self, obj):
-        """
-        향후 User 모델 연동 시 변경 예정
-        현재는 항상 False 반환
-        """
-        # TODO: request.user가 인증된 경우 좋아요 여부 확인 로직 추가
+        """로그인 유저: 좋아요 여부 조회 / 비로그인: False"""
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            from accounts.models import UserLikeList
+            return UserLikeList.objects.filter(user=request.user, movie=obj).exists()
         return False
+
+
+# ========== Comment Serializers ==========
+class CommentCreateSerializer(serializers.Serializer):
+    """댓글 작성 요청용"""
+    content = serializers.CharField(max_length=1000)
+
+
+class CommentResponseSerializer(serializers.ModelSerializer):
+    """댓글 응답용"""
+    comment_id = serializers.IntegerField(source='id')
+    user_name = serializers.CharField(source='user.username')
+
+    class Meta:
+        model = Comment
+        fields = ['comment_id', 'user_name', 'content', 'created_at']
+

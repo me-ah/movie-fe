@@ -98,3 +98,15 @@ class UserMyList(models.Model):
 
     class Meta:
         unique_together = ('user', 'movie')
+
+
+# ========== UserLikeList 모델 (좋아요) ==========
+class UserLikeList(models.Model):
+    """유저-영화 좋아요 관계 테이블 (UserMyList와 동일 패턴)"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='like_lists')
+    movie = models.ForeignKey('movies.Movie', on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'movie')
+

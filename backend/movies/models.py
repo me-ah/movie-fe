@@ -49,3 +49,21 @@ class Movie(models.Model):
 
     def __str__(self):
         return f"[{self.movie_id}] {self.title}"
+
+
+# ========== Comment 모델 ==========
+class Comment(models.Model):
+    """영화 댓글 모델"""
+    movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(
+        'accounts.User', on_delete=models.CASCADE, related_name='comments'
+    )
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def __str__(self):
+        return f"{self.user.username}: {self.content[:20]}"
+
