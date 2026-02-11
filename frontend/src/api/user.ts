@@ -37,17 +37,23 @@ export type BackendMyPageResponse = {
 	>;
 };
 
-export async function getMe() {
-	const res = await api.get<MeResponse>("/me");
-	return res.data;
-}
+export type GetMyPagePayload = {
+	userid: string | number;
+};
 
-export async function getMyPage() {
-	const res = await api.post<BackendMyPageResponse>("/accounts/mypage/");
+export async function getMyPage(payload: GetMyPagePayload) {
+	const res = await api.post<BackendMyPageResponse>(
+		"/accounts/mypage/",
+		payload,
+	);
 	return res.data;
 }
 
 export async function patchMe(payload: UpdateMePayload) {
-	const res = await api.patch("/accounts/mypage/", payload);
+	const res = await api.patch("/accounts/proflie/", payload);
 	return res.data;
+}
+
+export async function withdrawMe() {
+	return api.delete("/accounts/profile/delete");
 }

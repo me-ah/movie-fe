@@ -1,14 +1,22 @@
-import authClient from "@/lib/authClient";
-import { setUser } from "@/lib/userStorage";
+// src/api/auth.ts
 
-type LoginResponse = {
-	accessToken: string;
-	refreshToken: string;
+import { useRouter } from "next/navigation";
+import api from "@/lib/authClient";
+import { clearTokens, setTokens } from "@/lib/tokenStorage";
+import { clearUser, setUser } from "@/lib/userStorage";
+
+export type LoginResponse = {
+	message: string;
 	user: {
-		id: number;
+		userid: number;
 		username: string;
-		email: string;
+		useremail: string;
+		firstname: string;
+		lastname: string;
 	};
+	token: string;
+	refresh: string;
+	onboding: boolean;
 };
 
 export type SignupRequest = {
@@ -21,23 +29,31 @@ export type SignupRequest = {
 };
 
 export async function login(username: string, password: string) {
-	const res = await authClient.post<LoginResponse>("/accounts/login/", {
+	const res = await api.post<LoginResponse>("/accounts/login/", {
 		username,
 		password,
 	});
-	const { user } = res.data;
+
+	const { user, token, refresh } = res.data;
 
 	setUser({
-		user_id: user.id,
-		username: user.username,
-		email: user.email,
+		user_id: user.userid,
 	});
+
+	setTokens(token, refresh);
 
 	return res.data;
 }
 
 export async function signup(payload: SignupRequest) {
-	const res = await authClient.post("/accounts/register/", payload);
-	console.log(res.data);
+	const res = await api.post("/accounts/register/", payload);
 	return res.data;
+}
+
+export async function logout() {
+	const router = useRouter();
+
+	clearTokens();
+	clearUser();
+	router.replace("/auth/");
 }

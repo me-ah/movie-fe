@@ -43,7 +43,7 @@ api.interceptors.response.use(
 				isRefreshing = true;
 
 				refreshPromise = axios
-					.post(`${BASE_URL}/auth/refresh`, {
+					.post(`${BASE_URL}/accounts/login/refresh`, {
 						refreshToken,
 					})
 					.then((res) => {

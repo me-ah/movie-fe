@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { type BackendMyPageResponse, getMyPage } from "@/api/user";
 import EditModal from "@/app/auth/mypage/edit_modal";
 import { Button } from "@/components/ui/button";
+import { getUser } from "@/lib/userStorage";
 import MyListSection, { type PosterItem } from "./my_list_section";
 import StatCard from "./my_statcard";
 
@@ -82,7 +83,8 @@ export default function MyPage() {
 
 		const load = async () => {
 			try {
-				const data = await getMyPage();
+				const storedUser = getUser();
+				const data = await getMyPage({ userid: storedUser.user_id });
 				if (cancelled) return;
 
 				const norm = normalize(data);
@@ -118,7 +120,7 @@ export default function MyPage() {
 	);
 
 	const displayName = useMemo(() => {
-		const full = `${userView.firstname} ${userView.lastname}`.trim();
+		const full = `${userView.firstname}${userView.lastname}`.trim();
 		return full || userView.username || "Unknown";
 	}, [userView.firstname, userView.lastname, userView.username]);
 
@@ -126,15 +128,9 @@ export default function MyPage() {
 		<div className="min-h-screen bg-zinc-950 text-zinc-100">
 			<header className="sticky top-0 z-20 border-b border-zinc-800/70 bg-zinc-950/70 backdrop-blur">
 				<div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-					<Link href="/" className="text-xl font-semibold tracking-tight">
+					<Link href="/home" className="text-xl font-semibold tracking-tight">
 						<span className="text-red-500">Me:ah</span>Flix
 					</Link>
-
-					<div className="flex items-center gap-3">
-						<div className="hidden text-sm text-zinc-400 sm:block">
-							{userView.useremail}
-						</div>
-					</div>
 				</div>
 			</header>
 
@@ -201,7 +197,10 @@ export default function MyPage() {
 				open={settingsOpen}
 				onOpenChange={setSettingsOpen}
 				onSaved={async () => {
-					const data = await getMyPage();
+					const storedUser = getUser();
+					if (!storedUser?.user_id) return;
+
+					const data = await getMyPage({ userid: storedUser.user_id });
 					const norm = normalize(data);
 					setUser(norm.user);
 					setRecordItems(norm.recordItems);
