@@ -4,7 +4,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { Sidebar } from "./Sidebar";
 
-const HIDDEN_SIDEBAR_PATHS = ["/auth/login", "/auth/signup"];
+const HIDDEN_SIDEBAR_PATHS = ["/auth/login", "/auth/signup", "/auth"];
 
 export function LayoutWrapper({ children }: { children: ReactNode }) {
 	const pathname = usePathname();
