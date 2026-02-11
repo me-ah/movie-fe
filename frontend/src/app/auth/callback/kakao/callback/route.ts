@@ -58,7 +58,6 @@ export async function GET(req: Request) {
 		return NextResponse.redirect(`${appUrl}/auth?error=no_code`);
 	}
 
-	// 1) 카카오 토큰 교환
 	const tokenRes = await fetch("https://kauth.kakao.com/oauth/token", {
 		method: "POST",
 		headers: {
@@ -74,7 +73,8 @@ export async function GET(req: Request) {
 	});
 
 	if (!tokenRes.ok) {
-		console.error("Kakao token error:", await tokenRes.text());
+		const text = await tokenRes.text();
+		console.error("Kakao token error:", tokenRes.status, text);
 		return NextResponse.redirect(`${appUrl}/auth?error=token_failed`);
 	}
 
@@ -85,7 +85,6 @@ export async function GET(req: Request) {
 		return NextResponse.redirect(`${appUrl}/auth?error=missing_kakao_token`);
 	}
 
-	// 2) 카카오 사용자 정보 조회 (선택)
 	const meRes = await fetch("https://kapi.kakao.com/v2/user/me", {
 		headers: { Authorization: `Bearer ${kakaoAccessToken}` },
 	});
@@ -95,35 +94,35 @@ export async function GET(req: Request) {
 	}
 	const me = await meRes.json();
 
-	// 3) 백엔드에 카카오 토큰 전달 → 서비스 JWT 발급
-	const backendRes = await fetch(`${backendBase}/auth/social/kakao`, {
+	const backendRes = await fetch(`${backendBase}/accounts/login/kakao/`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
-			kakaoAccessToken,
+			access_token: kakaoAccessToken,
 			kakaoId: me?.id,
 			email: me?.kakao_account?.email,
 			nickname: me?.kakao_account?.profile?.nickname,
 		}),
 	});
-
+	console.log(backendRes);
 	if (!backendRes.ok) {
 		console.error("Backend social error:", await backendRes.text());
 		return NextResponse.redirect(`${appUrl}/auth?error=backend_failed`);
 	}
 
 	const data = await backendRes.json();
-	const accessToken = data.accessToken as string | undefined;
-	const refreshToken = data.refreshToken as string | undefined;
+	const accessToken = data.token as string | undefined;
+	const refreshToken = data.refresh as string | undefined;
+	const userId = data.user?.userid;
 
 	if (!accessToken || !refreshToken) {
 		return NextResponse.redirect(`${appUrl}/auth?error=missing_app_tokens`);
 	}
 
-	// 4) 프론트 콜백 페이지로 이동하여 토큰 저장
 	const redirect = new URL(`${appUrl}/auth/callback`);
 	redirect.searchParams.set("access", accessToken);
 	redirect.searchParams.set("refresh", refreshToken);
+	redirect.searchParams.set("userid", String(userId));
 
 	return NextResponse.redirect(redirect.toString());
 }

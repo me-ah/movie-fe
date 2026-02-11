@@ -1,41 +1,21 @@
-// src/lib/userStorage.ts
+const USER_ID_KEY = "user_id";
 
-export type StoredUser = {
-  user_id: number | string;
-  username?: string;
-  email?: string;
-  // 필요하면 더 추가
-};
+export function setUser(user: { user_id: number | string }) {
+	if (typeof window === "undefined") return;
 
-const KEY = "meahflix_user";
-
-function isBrowser() {
-  return typeof window !== "undefined";
+	localStorage.setItem(USER_ID_KEY, String(user.user_id));
 }
 
-export function setUser(user: StoredUser) {
-  if (!isBrowser()) return;
-  localStorage.setItem(KEY, JSON.stringify(user));
-}
+export function getUser() {
+	if (typeof window === "undefined") return null;
 
-export function getUser(): StoredUser | null {
-  if (!isBrowser()) return null;
-  const raw = localStorage.getItem(KEY);
-  if (!raw) return null;
-
-  try {
-    return JSON.parse(raw) as StoredUser;
-  } catch {
-    return null;
-  }
+	return {
+		user_id: localStorage.getItem(USER_ID_KEY),
+	};
 }
 
 export function clearUser() {
-  if (!isBrowser()) return;
-  localStorage.removeItem(KEY);
-}
+	if (typeof window === "undefined") return;
 
-export function getUserId(): string | number | null {
-  const u = getUser();
-  return u?.user_id ?? null;
+	localStorage.removeItem(USER_ID_KEY);
 }

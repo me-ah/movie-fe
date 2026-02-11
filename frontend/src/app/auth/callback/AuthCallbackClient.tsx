@@ -3,23 +3,29 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { setTokens } from "@/lib/tokenStorage";
+import { setUser } from "@/lib/userStorage";
 
 export default function AuthCallbackClient() {
 	const router = useRouter();
-	const params = useSearchParams();
+	const sp = useSearchParams();
 
 	useEffect(() => {
-		const access = params.get("access");
-		const refresh = params.get("refresh");
+		const access = sp.get("access");
+		const refresh = sp.get("refresh");
+		const userId = sp.get("userid");
 
-		if (access && refresh) {
-			setTokens(access, refresh);
-			router.replace("/");
+		if (!access || !refresh) {
+			router.replace("/auth?error=missing_app_tokens");
 			return;
 		}
 
-		router.replace("/auth?error=missing_tokens");
-	}, [params, router]);
+		console.log(userId);
+		console.log("12345678");
+		setTokens(access, refresh);
+		setUser({ user_id: userId });
 
-	return null;
+		router.replace("/");
+	}, [router, sp]);
+
+	return <div className="p-6 text-zinc-400">로그인 처리 중...</div>;
 }
