@@ -14,9 +14,9 @@ class HomeMovieSerializer(serializers.BaseSerializer):
             instance.embed_url if instance.embed_url else instance.youtube_key
         ]
 
-class HomeCategorySerializer(serializers.ModelSerializer):
-    movies = HomeMovieSerializer(many=True)
+class MainResponseSerializer(serializers.Serializer):
+    user = serializers.DictField()
+    main = HomeMovieSerializer(many=True)
 
-    class Meta:
-        model = HomeCategory
-        fields = ['title', 'movies']
+class SubResponseSerializer(serializers.Serializer):
+    sub = serializers.DictField(child=HomeMovieSerializer(many=True))
