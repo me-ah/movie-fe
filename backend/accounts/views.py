@@ -1,7 +1,7 @@
 import os
 import requests
 from django.contrib.auth import get_user_model
-from django.db.models import Sum
+from django.db.models import Sum, F
 from rest_framework import status, generics, views
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -15,9 +15,10 @@ from .serializers import (
     SocialLoginSerializer,
     CustomTokenObtainPairSerializer,
     LoginResponseSerializer,
-    MyPageRequestSerializer,
-    MyPageResponseSerializer,
+    MyPageRequestSerializer, 
+    MyPageResponseSerializer, 
     WatchHistorySerializer,
+    OnboardingSerializer,
     UserProfileUpdateSerializer
 )
 from movies.models import Movie
@@ -53,100 +54,61 @@ class ChangePasswordView(views.APIView):
             return Response({'status': 'success', 'message': 'Password updated successfully'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-class UserProfileUpdateView(generics.UpdateAPIView):
-    """
-    유저 프로필 수정 API (PATCH)
-    """
+# ========== User Profile Views (복구 완료) ==========
+
+class UserProfileUpdateView(views.APIView):
+    """유저 프로필 수정 (email, first_name, last_name) - PATCH만 지원"""
     permission_classes = (IsAuthenticated,)
     serializer_class = UserProfileUpdateSerializer
 
-    def get_object(self):
-        return self.request.user
-
     @extend_schema(request=UserProfileUpdateSerializer, responses={200: UserProfileUpdateSerializer})
     def patch(self, request, *args, **kwargs):
-        return self.partial_update(request, *args, **kwargs)
+        serializer = UserProfileUpdateSerializer(request.user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class UserProfileDeleteView(views.APIView):
-    """
-    회원 탈퇴 API (DELETE)
-    """
+    """유저 회원 탈퇴"""
     permission_classes = (IsAuthenticated,)
 
-    @extend_schema(responses={204: None})
     def delete(self, request):
         user = request.user
-        user.delete() # CASCADE 설정에 의해 관련 기록 자동 삭제
-        return Response({"message": "회원 탈퇴가 완료되었습니다."}, status=status.HTTP_204_NO_CONTENT)
+        user.delete()
+        return Response({"message": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+# ====================================================
 
 class MyPageView(views.APIView):
-    """
-    마이페이지 API
-    POST /api/accounts/mypage/
-    """
     permission_classes = (IsAuthenticated,)
     serializer_class = MyPageRequestSerializer
-
     @extend_schema(request=MyPageRequestSerializer, responses={200: MyPageResponseSerializer})
     def post(self, request):
         user = request.user
         request_userid = request.data.get('userid')
-
         if request_userid is None:
-            return Response({
-                "error": "MISSING_PARAMETER",
-                "message": "userid 파라미터가 누락되었습니둥"
-            }, status=status.HTTP_400_BAD_REQUEST)
-
+            return Response({"error": "MISSING_PARAMETER", "message": "userid 파라미터가 누락되었습니둥"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             if int(user.id) != int(request_userid):
-                return Response({
-                    "error": "NOT_USER_DATA",
-                    "message": "인증 정보와 요청한 유저 ID가 일치하지 않습니둥"
-                }, status=status.HTTP_404_NOT_FOUND)
+                return Response({"error": "NOT_USER_DATA", "message": "인증 정보와 요청한 유저 ID가 일치하지 않습니둥"}, status=status.HTTP_404_NOT_FOUND)
         except (ValueError, TypeError):
-             return Response({
-                "error": "INVALID_PARAMETER",
-                "message": "userid는 숫자 형식이어야 합니둥"
-            }, status=status.HTTP_400_BAD_REQUEST)
-
+             return Response({"error": "INVALID_PARAMETER", "message": "userid는 숫자 형식이어야 합니둥"}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            userdata = {
-                "userid": str(user.id),
-                "username": user.username,
-                "useremail": user.email,
-                "firstname": user.first_name,
-                "lastname": user.last_name,
-            }
+            userdata = {"userid": str(user.id), "username": user.username, "useremail": user.email, "firstname": user.first_name, "lastname": user.last_name}
             watchtime_sum = UserMovieHistory.objects.filter(user=user).aggregate(Sum('watch_time'))['watch_time__sum'] or 0
             usermylist_count = UserMyList.objects.filter(user=user).count()
             record_movies_qs = UserMovieHistory.objects.filter(user=user).select_related('movie').order_by('-watched_at')[:10]
             recordmovie = {}
             for history in record_movies_qs:
-                recordmovie[str(history.movie.id)] = {
-                    "recordmovie_name": history.movie.title,
-                    "recordmovie_poster": history.movie.poster_path
-                }
+                recordmovie[str(history.movie.id)] = {"recordmovie_name": history.movie.title, "recordmovie_poster": history.movie.poster_path}
             mylist_movies_qs = UserMyList.objects.filter(user=user).select_related('movie').order_by('-created_at')[:10]
             mylistmovie = {}
             for item in mylist_movies_qs:
-                mylistmovie[str(item.movie.id)] = {
-                    "mylistmovie_name": item.movie.title,
-                    "mylistmovie_poster": item.movie.poster_path
-                }
-            response_data = {
-                "userdata": userdata,
-                "watchtime": str(watchtime_sum),
-                "usermylist": str(usermylist_count),
-                "recordmovie": recordmovie,
-                "mylistmovie": mylistmovie
-            }
-            return Response(response_data, status=status.HTTP_200_OK)
+                mylistmovie[str(item.movie.id)] = {"mylistmovie_name": item.movie.title, "mylistmovie_poster": item.movie.poster_path}
+            return Response({"userdata": userdata, "watchtime": str(watchtime_sum), "usermylist": str(usermylist_count), "recordmovie": recordmovie, "mylistmovie": mylistmovie}, status=status.HTTP_200_OK)
         except Exception as e:
-            return Response({
-                "error": "SERVER_ERROR",
-                "message": f"데이터 조회 중 서버 에러가 발생했습니둥: {str(e)}"
-            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"error": "SERVER_ERROR", "message": f"데이터 조회 중 서버 에러가 발생했습니둥: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class KakaoLoginView(views.APIView):
     permission_classes = (AllowAny,)
@@ -170,7 +132,7 @@ class KakaoLoginView(views.APIView):
             if email and User.objects.filter(email=email).exists(): email = f"{username}@kakao.com"
             user = User.objects.create_user(username=username, email=email or f"{username}@kakao.com", password=None, first_name=nickname, login_type='kakao')
         refresh = RefreshToken.for_user(user)
-        return Response({"message": "로그인 성공", "user": {"userid": user.id, "username": user.username, "useremail": user.email, "firstname": user.first_name, "lastname": user.last_name}, "token": str(refresh.access_token), "refresh": str(refresh)})
+        return Response({"message": "로그인 성공", "user": {"userid": user.id, "username": user.username, "useremail": user.email, "firstname": user.first_name, "lastname": user.last_name, "onboarding": user.is_onboarding_completed}, "token": str(refresh.access_token), "refresh": str(refresh)})
 
 class GoogleLoginView(views.APIView):
     permission_classes = (AllowAny,)
@@ -194,7 +156,7 @@ class GoogleLoginView(views.APIView):
             if email and User.objects.filter(email=email).exists(): email = f"{username}@google.com"
             user = User.objects.create_user(username=username, email=email or f"{username}@google.com", password=None, first_name=first_name, last_name=last_name, login_type='google')
         refresh = RefreshToken.for_user(user)
-        return Response({"message": "로그인 성공", "user": {"userid": user.id, "username": user.username, "useremail": user.email, "firstname": user.first_name, "lastname": user.last_name}, "token": str(refresh.access_token), "refresh": str(refresh)})
+        return Response({"message": "로그인 성공", "user": {"userid": user.id, "username": user.username, "useremail": user.email, "firstname": user.first_name, "lastname": user.last_name, "onboarding": user.is_onboarding_completed}, "token": str(refresh.access_token), "refresh": str(refresh)})
 
 class WatchHistoryView(views.APIView):
     permission_classes = (IsAuthenticated,)
@@ -209,3 +171,26 @@ class WatchHistoryView(views.APIView):
         if watch_time < 3: return Response({"message": "시청 시간이 짧아 기록되지 않았습니둥.", "movie_id": movie_id, "watch_time": watch_time}, status=status.HTTP_200_OK)
         UserMovieHistory.objects.create(user=request.user, movie=movie, watch_time=watch_time)
         return Response({"message": "시청 기록이 저장되었습니다.", "movie_id": movie_id, "watch_time": watch_time}, status=status.HTTP_201_CREATED)
+
+# ========== Onboarding View (신규) ==========
+class OnboardingView(views.APIView):
+    """최초 1회 장르 선호도 설정 API"""
+    permission_classes = (IsAuthenticated,)
+    serializer_class = OnboardingSerializer
+
+    @extend_schema(request=OnboardingSerializer)
+    def post(self, request):
+        user = request.user
+        serializer = OnboardingSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # True인 장르당 +50 가산
+        for field, is_selected in serializer.validated_data.items():
+            if is_selected:
+                current_val = getattr(user, field, 0) or 0
+                setattr(user, field, current_val + 50)
+        
+        user.is_onboarding_completed = True
+        user.save()
+        return Response({"status": "success", "message": "온보딩이 완료되었습니다.", "onboarding": user.is_onboarding_completed})
