@@ -120,7 +120,7 @@ export default function MyPage() {
 	);
 
 	const displayName = useMemo(() => {
-		const full = `${userView.firstname} ${userView.lastname}`.trim();
+		const full = `${userView.firstname}${userView.lastname}`.trim();
 		return full || userView.username || "Unknown";
 	}, [userView.firstname, userView.lastname, userView.username]);
 
@@ -128,15 +128,9 @@ export default function MyPage() {
 		<div className="min-h-screen bg-zinc-950 text-zinc-100">
 			<header className="sticky top-0 z-20 border-b border-zinc-800/70 bg-zinc-950/70 backdrop-blur">
 				<div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-					<Link href="/" className="text-xl font-semibold tracking-tight">
+					<Link href="/home" className="text-xl font-semibold tracking-tight">
 						<span className="text-red-500">Me:ah</span>Flix
 					</Link>
-
-					<div className="flex items-center gap-3">
-						<div className="hidden text-sm text-zinc-400 sm:block">
-							{userView.useremail}
-						</div>
-					</div>
 				</div>
 			</header>
 

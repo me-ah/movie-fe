@@ -48,8 +48,12 @@ export async function getMyPage(payload: GetMyPagePayload) {
 	);
 	return res.data;
 }
-// 마이페이지 수정 (PATCH)
+
 export async function patchMe(payload: UpdateMePayload) {
-	const res = await api.patch("/accounts/mypage/", payload);
+	const res = await api.patch("/accounts/proflie/", payload);
 	return res.data;
+}
+
+export async function withdrawMe() {
+	return api.delete("/accounts/profile/delete");
 }

@@ -1,7 +1,14 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { type BackendMyPageResponse, getMyPage, patchMe } from "@/api/user";
+import { logout } from "@/api/auth";
+import {
+	type BackendMyPageResponse,
+	getMyPage,
+	patchMe,
+	withdrawMe,
+} from "@/api/user";
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -21,12 +28,7 @@ type Props = {
 	onWithdraw?: () => void;
 };
 
-export default function EditModal({
-	open,
-	onOpenChange,
-	onSaved,
-	onWithdraw,
-}: Props) {
+export default function EditModal({ open, onOpenChange, onSaved }: Props) {
 	const [editFirstname, setEditFirstname] = useState("");
 	const [editLastname, setEditLastname] = useState("");
 	const [editEmail, setEditEmail] = useState("");
@@ -34,8 +36,8 @@ export default function EditModal({
 	const [saving, setSaving] = useState(false);
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
+	const router = useRouter();
 
-	// ✅ userId 안정적으로 확보 (getUser()가 string/number를 반환한다고 가정)
 	const userId = useMemo(() => getUser()?.user_id, []);
 
 	useEffect(() => {
@@ -94,12 +96,33 @@ export default function EditModal({
 				useremail: editEmail.trim(),
 			});
 
-			// ✅ 저장 후 서버 기준 최신 mypage 전체 다시 조회 (payload 필수!)
 			const data = await getMyPage({ userid: userId });
 			onSaved(data);
 			onOpenChange(false);
 		} catch {
 			setSaveError("저장에 실패했습니다. 잠시 후 다시 시도해주세요.");
+		} finally {
+			setSaving(false);
+		}
+	};
+
+	const onWithdrawClick = async () => {
+		if (!userId) {
+			setSaveError("로그인 정보가 없습니다. 다시 로그인해주세요.");
+			return;
+		}
+
+		try {
+			setSaving(true);
+			setSaveError(null);
+
+			await withdrawMe();
+			await logout();
+			onOpenChange(false);
+
+			router.replace("/auth/");
+		} catch {
+			setSaveError("회원탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.");
 		} finally {
 			setSaving(false);
 		}
@@ -155,11 +178,11 @@ export default function EditModal({
 					{saveError && <p className="text-sm text-red-400">{saveError}</p>}
 				</div>
 
-				<DialogFooter className="flex items-center justify-between">
+				<DialogFooter className="flex items-center justify-between mt-5">
 					<Button
 						type="button"
 						variant="secondary"
-						onClick={() => (onWithdraw ? onWithdraw() : onOpenChange(false))}
+						onClick={onWithdrawClick}
 						disabled={disabled}
 						className="rounded-xl bg-red-500 text-white border border-red-600 hover:bg-red-600"
 					>

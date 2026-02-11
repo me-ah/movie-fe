@@ -1,8 +1,9 @@
 // src/api/auth.ts
 
+import { useRouter } from "next/navigation";
 import api from "@/lib/authClient";
-import { setTokens } from "@/lib/tokenStorage";
-import { setUser } from "@/lib/userStorage";
+import { clearTokens, setTokens } from "@/lib/tokenStorage";
+import { clearUser, setUser } from "@/lib/userStorage";
 
 export type LoginResponse = {
 	message: string;
@@ -47,4 +48,12 @@ export async function login(username: string, password: string) {
 export async function signup(payload: SignupRequest) {
 	const res = await api.post("/accounts/register/", payload);
 	return res.data;
+}
+
+export async function logout() {
+	const router = useRouter();
+
+	clearTokens();
+	clearUser();
+	router.replace("/auth/");
 }
