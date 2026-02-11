@@ -17,7 +17,6 @@ type Props = {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 
-	// ✅ 저장 성공 시 부모(MyPage)에게 최신 mypage 전체 넘겨주기
 	onSaved: (data: BackendMyPageResponse) => void;
 
 	onWithdraw?: () => void;
@@ -84,7 +83,6 @@ export default function EditModal({
 				useremail: editEmail.trim(),
 			});
 
-			// ✅ 저장 후 서버 기준 최신 mypage 전체 다시 조회
 			const data = await getMyPage();
 			onSaved(data);
 			onOpenChange(false);

@@ -58,7 +58,6 @@ export async function GET(req: Request) {
 		return NextResponse.redirect(`${appUrl}/auth?error=no_code`);
 	}
 
-	// 1) 카카오 토큰 교환
 	const tokenRes = await fetch("https://kauth.kakao.com/oauth/token", {
 		method: "POST",
 		headers: {
@@ -86,7 +85,6 @@ export async function GET(req: Request) {
 		return NextResponse.redirect(`${appUrl}/auth?error=missing_kakao_token`);
 	}
 
-	// 2) 카카오 사용자 정보 조회 (선택)
 	const meRes = await fetch("https://kapi.kakao.com/v2/user/me", {
 		headers: { Authorization: `Bearer ${kakaoAccessToken}` },
 	});
@@ -96,7 +94,6 @@ export async function GET(req: Request) {
 	}
 	const me = await meRes.json();
 
-	// 3) 백엔드에 카카오 토큰 전달 → 서비스 JWT 발급
 	const backendRes = await fetch(`${backendBase}/accounts/login/kakao/`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
@@ -121,7 +118,6 @@ export async function GET(req: Request) {
 		return NextResponse.redirect(`${appUrl}/auth?error=missing_app_tokens`);
 	}
 
-	// 4) 프론트 콜백 페이지로 이동하여 토큰 저장
 	const redirect = new URL(`${appUrl}/auth/callback`);
 	redirect.searchParams.set("access", accessToken);
 	redirect.searchParams.set("refresh", refreshToken);

@@ -14,7 +14,6 @@ import RecommendsRow, {
 	type RecommendItem as RecommendRowItem,
 } from "./RecommendsRow";
 
-// 탭용 상세
 type MovieDetail = {
 	overview?: string;
 	director?: string;
@@ -22,7 +21,6 @@ type MovieDetail = {
 	year?: number | string;
 };
 
-// ✅ 백엔드에서 "한 번에" 내려주는 상세페이지 응답 형태
 type MoviePageData = {
 	trailer?: string;
 	title: string;
@@ -87,10 +85,8 @@ export default function MoviewDetailClient({ movieId }: { movieId: string }) {
 	const [tab, setTab] = useState<TabKey>("info");
 	const [liked, setLiked] = useState(false);
 
-	// 현재 보고 있는 영화 id (추천 클릭 시 변경)
 	const [currentMovieId, setCurrentMovieId] = useState(movieId);
 
-	// route movieId가 바뀌면 현재 movieId도 갱신
 	useEffect(() => {
 		setCurrentMovieId(movieId);
 	}, [movieId]);
@@ -120,7 +116,6 @@ export default function MoviewDetailClient({ movieId }: { movieId: string }) {
 				setMovieDetail(final.movieDetail);
 				setRecommends(final.recommends);
 
-				// 탭/스크롤 초기화(원하면 유지)
 				setTab("info");
 				window.scrollTo({ top: 0, behavior: "smooth" });
 			} catch (_e) {

@@ -1,4 +1,3 @@
-// src/lib/userStorage.ts
 const USER_ID_KEY = "user_id";
 const USERNAME_KEY = "username";
 const EMAIL_KEY = "email";

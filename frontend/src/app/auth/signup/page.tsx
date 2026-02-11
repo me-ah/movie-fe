@@ -32,28 +32,24 @@ function validateAll(values: {
 }): FieldErrors {
 	const errors: FieldErrors = {};
 
-	// username
 	if (!values.username.trim()) {
 		errors.username = "아이디를 입력해주세요.";
 	} else if (!USERNAME_RE.test(values.username)) {
 		errors.username = "아이디는 4~20자, 영문/숫자/언더스코어(_)만 가능합니다.";
 	}
 
-	// email
 	if (!values.email.trim()) {
 		errors.email = "이메일을 입력해주세요.";
 	} else if (!EMAIL_RE.test(values.email)) {
 		errors.email = "이메일 형식이 올바르지 않습니다.";
 	}
 
-	// password
 	if (!values.password) {
 		errors.password = "비밀번호를 입력해주세요.";
 	} else {
 		if (values.password.length < 8) {
 			errors.password = "비밀번호는 8자 이상이어야 합니다.";
 		} else {
-			// 최소 강도 체크: 대문자/소문자/숫자/특수문자 중 3종 이상(권장)
 			const groups = [
 				/[a-z]/.test(values.password),
 				/[A-Z]/.test(values.password),
@@ -68,21 +64,18 @@ function validateAll(values: {
 		}
 	}
 
-	// passwordConfirm
 	if (!values.password_confirm) {
 		errors.password_confirm = "비밀번호 확인을 입력해주세요.";
 	} else if (values.password_confirm !== values.password) {
 		errors.password_confirm = "비밀번호가 일치하지 않습니다.";
 	}
 
-	// first_name
 	if (!values.first_name.trim()) {
 		errors.first_name = "이름을 입력해주세요.";
 	} else if (!NAME_RE.test(values.first_name.trim())) {
 		errors.first_name = "이름은 한글/영문만 입력 가능합니다.";
 	}
 
-	// last_name
 	if (!values.last_name.trim()) {
 		errors.last_name = "성을 입력해주세요.";
 	} else if (!NAME_RE.test(values.last_name.trim())) {
@@ -144,7 +137,6 @@ export default function SignUp() {
 	const handleSignup = async () => {
 		setSubmitError(null);
 
-		// 제출 시 전부 touched 처리
 		setTouched({
 			username: true,
 			email: true,

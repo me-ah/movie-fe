@@ -23,8 +23,6 @@ export default function MovieShareDialog({
 }: Props) {
 	const shareUrl = useMemo(() => {
 		if (typeof window === "undefined") return "";
-		// ✅ 영화 상세 라우트에 맞게 수정 (네가 실제 쓰는 라우트로)
-		// 예: /movies/[id] 라면 `/movies/${movieId}`
 		return `${window.location.origin}/movies/${movieId}`;
 	}, [movieId]);
 
@@ -39,7 +37,6 @@ export default function MovieShareDialog({
 			await navigator.clipboard.writeText(shareUrl);
 			setCopied(true);
 		} catch {
-			// clipboard가 막힌 환경 fallback
 			const ta = document.createElement("textarea");
 			ta.value = shareUrl;
 			document.body.appendChild(ta);
@@ -58,7 +55,7 @@ export default function MovieShareDialog({
 				url: shareUrl,
 			});
 		} catch {
-			// 사용자가 취소한 경우 등은 무시
+			console.error("native share failed");
 		}
 	};
 
