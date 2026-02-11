@@ -310,3 +310,35 @@ class ReviewCommentUpdateView(APIView):
             "message": "댓글이 성공적으로 수정되었습니다",
             "comment": ReviewCommentSerializer(updated_comment).data
         }, status=status.HTTP_200_OK)
+
+
+# ========== 댓글 삭제 (DELETE) ==========
+class ReviewCommentDeleteView(APIView):
+    """
+    DELETE /api/review/{review_id}/comment/{comment_id}/delete/
+    댓글 삭제 (작성자 본인만 가능)
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="댓글 삭제",
+        description="본인이 작성한 댓글을 삭제합니다.",
+        responses={200: None}
+    )
+    def delete(self, request, review_id, comment_id):
+        # 댓글 조회 및 존재 확인
+        comment = get_object_or_404(ReviewComment, id=comment_id)
+
+        # URL의 review_id와 댓글의 review가 일치하는지 검증
+        if comment.review.id != review_id:
+            return Response({"error": "잘못된 경로입니다. (리뷰 ID 불일치)"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # ---- 작성자 검증 ----
+        if comment.user != request.user:
+            return Response({"error": "본인의 댓글만 삭제할 수 있습니다."}, status=status.HTTP_403_FORBIDDEN)
+
+        comment.delete()
+
+        return Response({
+            "message": "댓글이 성공적으로 삭제되었습니다"
+        }, status=status.HTTP_200_OK)

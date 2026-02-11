@@ -364,3 +364,42 @@ class ReviewAPITest(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.data['error'], '잘못된 경로입니다. (리뷰 ID 불일치)')
         print('✅ [PASS] 경로 불일치 → 400')
+
+    # ========== 25. 댓글 삭제 성공 → 200 ==========
+    def test_comment_delete_success(self):
+        """본인 댓글 삭제 성공"""
+        refresh = RefreshToken.for_user(self.user2)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+        comment = ReviewComment.objects.create(user=self.user2, review=self.review1, content='삭제할 댓글')
+
+        response = self.client.delete(f'/api/review/{self.review1.id}/comment/{comment.id}/delete/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['message'], '댓글이 성공적으로 삭제되었습니다')
+        
+        # DB 확인
+        self.assertFalse(ReviewComment.objects.filter(id=comment.id).exists())
+        print('✅ [PASS] 댓글 삭제 → 200 + DB 삭제 확인')
+
+    # ========== 26. 타인 댓글 삭제 시도 → 403 ==========
+    def test_comment_delete_forbidden(self):
+        """타인 댓글 삭제 시도 → 403"""
+        refresh = RefreshToken.for_user(self.user1)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+        # user2가 작성한 댓글
+        comment = ReviewComment.objects.create(user=self.user2, review=self.review1, content='원본 댓글')
+
+        response = self.client.delete(f'/api/review/{self.review1.id}/comment/{comment.id}/delete/')
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data['error'], '본인의 댓글만 삭제할 수 있습니다.')
+        print('✅ [PASS] 타인 댓글 삭제 시도 → 403')
+
+    # ========== 27. 미인증 삭제 시도 → 401 ==========
+    def test_comment_delete_unauthenticated(self):
+        """미인증 댓글 삭제 시도 → 401"""
+        comment = ReviewComment.objects.create(user=self.user2, review=self.review1, content='댓글')
+        
+        response = self.client.delete(f'/api/review/{self.review1.id}/comment/{comment.id}/delete/')
+        self.assertEqual(response.status_code, 401)
+        print('✅ [PASS] 미인증 댓글 삭제 시도 → 401')
