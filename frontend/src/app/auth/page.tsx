@@ -10,7 +10,6 @@ export default function Auth() {
 	return (
 		<main className="min-h-screen flex items-center justify-center">
 			<div className="w-full max-w-xl flex flex-col items-center gap-8">
-				{/* 헤더 */}
 				<header className="text-center space-y-3">
 					<h1 className="text-3xl font-bold text-white">
 						여러분을 위한 영화 추천 사이트
@@ -24,7 +23,6 @@ export default function Auth() {
 					</p>
 				</header>
 
-				{/* 로그인 버튼 영역 */}
 				<section className="w-full space-y-3">
 					<Button
 						type="button"
@@ -84,7 +82,6 @@ export default function Auth() {
 					</Button>
 				</section>
 
-				{/* 하단 액션 */}
 				<section className="flex gap-4 text-sm">
 					<Button
 						variant="outline"

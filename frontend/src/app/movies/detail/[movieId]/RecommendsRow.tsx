@@ -31,7 +31,6 @@ export default function RecommendsRow({
             flex flex-col items-stretch
           "
 				>
-					{/* 이미지 */}
 					<div className="relative aspect-[2/3] w-full shrink-0">
 						<Image
 							src={it.poster || "/images/profile.jpg"}
@@ -42,7 +41,6 @@ export default function RecommendsRow({
 						/>
 					</div>
 
-					{/* 텍스트 (높이 고정해서 카드 높이 통일) */}
 					<div className="w-full px-3 py-3">
 						<div className="min-h-[2.5rem] text-sm text-zinc-200 line-clamp-2">
 							{it.title}

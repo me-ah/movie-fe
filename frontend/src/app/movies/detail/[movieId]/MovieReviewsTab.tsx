@@ -33,7 +33,6 @@ export default function MovieReviewsTab({
 	const [reviews, setReviews] = useState<ReviewItem[]>([]);
 	const [loading, setLoading] = useState(false);
 
-	// modal states
 	const [open, setOpen] = useState(false);
 	const [submitting, setSubmitting] = useState(false);
 
@@ -83,17 +82,16 @@ export default function MovieReviewsTab({
 		};
 	}, [normalizedMovieId]);
 
-	// ✅ 리뷰 작성 (POST + GET)
 	const handleCreate = async (payload: CreateReviewPayload) => {
 		try {
 			if (!normalizedMovieId) return;
 
 			setSubmitting(true);
 
-			await createMovieReview(normalizedMovieId, payload); // 🔥 POST
+			await createMovieReview(normalizedMovieId, payload);
 
 			setOpen(false);
-			await refetchReviews(); // 🔥 작성 후 GET 다시
+			await refetchReviews();
 		} catch (e) {
 			console.error("create review failed", e);
 			throw e;
@@ -108,7 +106,6 @@ export default function MovieReviewsTab({
 
 	return (
 		<div className="mt-5 space-y-3">
-			{/* 헤더 */}
 			<div className="flex items-center justify-between">
 				<div className="text-sm font-semibold text-zinc-100">리뷰</div>
 				<Button
@@ -121,7 +118,6 @@ export default function MovieReviewsTab({
 				</Button>
 			</div>
 
-			{/* 작성 모달 */}
 			<MovieReviewCreateDialog
 				open={open}
 				onOpenChange={setOpen}
@@ -129,7 +125,6 @@ export default function MovieReviewsTab({
 				submitting={submitting}
 			/>
 
-			{/* 리뷰 리스트 */}
 			{reviews.length === 0 ? (
 				<div className="rounded-2xl border border-zinc-800 bg-zinc-950/30 p-4 text-sm text-zinc-400">
 					아직 리뷰가 없습니다.

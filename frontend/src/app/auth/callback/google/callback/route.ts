@@ -61,8 +61,6 @@ export async function GET(req: Request) {
 		return NextResponse.redirect(`${appUrl}/auth?error=no_code`);
 	}
 
-	// (선택이지만 권장) state 체크
-	// 카카오 코드엔 없었지만, 구글은 state를 보낸다면 검증하는 게 안전함
 	if (state) {
 		const cookieState =
 			req.headers.get("cookie")?.match(/oauth_state=([^;]+)/)?.[1] ?? null;
@@ -72,7 +70,6 @@ export async function GET(req: Request) {
 		}
 	}
 
-	// 1) Google token 교환
 	const tokenRes = await fetch("https://oauth2.googleapis.com/token", {
 		method: "POST",
 		headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -91,17 +88,13 @@ export async function GET(req: Request) {
 	}
 
 	const tokenJson = await tokenRes.json();
-	// 백엔드가 id_token 받는 스펙이면 이걸 넘겨
 	const idToken = tokenJson.id_token as string | undefined;
-	// 백엔드가 access_token 받는 스펙이면 이걸 넘겨
 	const googleAccessToken = tokenJson.access_token as string | undefined;
 
 	if (!idToken && !googleAccessToken) {
 		return NextResponse.redirect(`${appUrl}/auth?error=missing_google_token`);
 	}
 
-	// 2) Google 사용자 정보 조회 (선택)
-	// access_token이 있어야 호출 가능
 	if (googleAccessToken) {
 		const meRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
 			headers: { Authorization: `Bearer ${googleAccessToken}` },
@@ -115,16 +108,11 @@ export async function GET(req: Request) {
 		await meRes.json();
 	}
 
-	// 3) 백엔드에 구글 토큰 전달 → 서비스 JWT 발급
-	// ✅ 너희 백엔드 스펙에 맞춰 body 키만 맞추면 됨
-	// - id_token 기반이면: { id_token: idToken }
-	// - access_token 기반이면: { accessToken: googleAccessToken }
 	const backendRes = await fetch(`${backendBase}/accounts/login/google/`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
 			access_token: googleAccessToken,
-			// 또는 id_token: idToken (백엔드 스펙에 맞게)
 		}),
 	});
 	if (!backendRes.ok) {

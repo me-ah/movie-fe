@@ -1,5 +1,3 @@
-// src/api/auth.ts
-
 import authClient from "@/lib/authClient";
 import { setUser } from "@/lib/userStorage";
 

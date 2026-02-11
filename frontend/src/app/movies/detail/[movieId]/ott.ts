@@ -1,5 +1,3 @@
-// src/utils/ott.ts
-
 const OTT_LABEL_KO: Record<string, string> = {
 	netflix: "넷플릭스",
 	watcha: "왓챠",

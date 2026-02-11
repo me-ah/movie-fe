@@ -1,7 +1,5 @@
-// src/api/movie/index.ts
 import api from "@/lib/apiClient";
 
-/** 탭용 상세 */
 export type MovieDetail = {
 	overview?: string;
 	director?: string;
@@ -44,17 +42,16 @@ export type MoviePageResponse = {
 	recommend_list?: RecommendItem[];
 };
 
-/** 배열 정규화 */
 function asArray<T>(v: T | T[] | undefined | null): T[] {
 	if (!v) return [];
 	return Array.isArray(v) ? v : [v];
 }
 
-/** id 파싱: "1167" -> 1167, "abc" -> "abc" (백엔드가 문자열 id도 받는다면) */
 function parseMovieId(movieId: string): string | number {
 	const n = Number(movieId);
 	return Number.isFinite(n) ? n : movieId;
 }
+
 export async function getMoviePage(
 	movieId: string,
 ): Promise<MoviePageResponse & { actors: ActorItem[]; reviews: ReviewItem[] }> {
