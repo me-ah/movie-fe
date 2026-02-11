@@ -7,7 +7,7 @@ from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 
 from .models import Review
-from .serializers import ReviewListSerializer, ReviewDetailSerializer, CommunityReviewCreateSerializer, CommunityReviewUpdateSerializer
+from .serializers import ReviewListSerializer, ReviewDetailSerializer, CommunityReviewCreateSerializer, CommunityReviewUpdateSerializer, ReviewCommentSerializer
 
 
 # ========== 페이지네이션 설정 ==========
@@ -194,4 +194,37 @@ class ReviewDeleteView(APIView):
 
         return Response({
             "message": f'작성하신 게시글 "{title}"이(가) 성공적으로 삭제 되었습니다.'
+        }, status=status.HTTP_200_OK)
+
+
+# ========== 댓글 작성 (POST) ==========
+class ReviewCommentCreateView(APIView):
+    """
+    POST /api/review/{review_id}/comment/create/
+    댓글 작성 (JWT 인증 필수)
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="댓글 작성",
+        description="특정 리뷰에 댓글을 작성합니다.",
+        request=ReviewCommentSerializer,
+        responses={200: ReviewCommentSerializer}  # or any specific response schema
+    )
+    def post(self, request, review_id):
+        review = get_object_or_404(Review, id=review_id)
+        
+        # request.data는 불변일 수 있으므로 copy() 사용
+        data = request.data.copy()
+        data['review'] = review.id
+        
+        serializer = ReviewCommentSerializer(data=data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        comment = serializer.save(user=request.user, review=review)
+        
+        return Response({
+            "message": "댓글이 정상적으로 작성 됐습니다.",
+            "comment": ReviewCommentSerializer(comment).data
         }, status=status.HTTP_200_OK)

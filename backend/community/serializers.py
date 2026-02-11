@@ -7,6 +7,7 @@ class ReviewUserSerializer(serializers.Serializer):
     """리뷰/댓글에 포함되는 유저 정보"""
     id = serializers.IntegerField()
     username = serializers.CharField()
+    date_joined = serializers.DateTimeField()
 
 
 # ========== 리뷰 댓글 ==========

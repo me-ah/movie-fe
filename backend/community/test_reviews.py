@@ -243,4 +243,47 @@ class ReviewAPITest(TestCase):
         self.assertEqual(response.status_code, 401)
         print('✅ [PASS] 미인증 삭제 시도 → 401')
 
+    # ========== 17. 댓글 작성 성공 → 200 ==========
+    def test_comment_create_success(self):
+        """댓글 작성 성공 확인"""
+        refresh = RefreshToken.for_user(self.user2)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+        response = self.client.post(f'/api/review/{self.review1.id}/comment/create/', {
+            'content': '정말 공감 가는 리뷰에요',
+            'review_id': self.review1.id  # Body에도 포함 (선택사항)
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['message'], '댓글이 정상적으로 작성 됐습니다.')
+        
+        comment = response.data['comment']
+        self.assertEqual(comment['content'], '정말 공감 가는 리뷰에요')
+        self.assertEqual(comment['user']['username'], 'testuser2')
+        self.assertIn('date_joined', comment['user'])  # 날짜 필드 존재 확인
+        
+        # DB 확인
+        self.assertTrue(ReviewComment.objects.filter(content='정말 공감 가는 리뷰에요').exists())
+        print('✅ [PASS] 댓글 작성 → 200 + DB 확인 + date_joined 확인')
+
+    # ========== 18. 없는 리뷰에 댓글 작성 → 404 ==========
+    def test_comment_create_not_found(self):
+        """없는 리뷰 ID로 댓글 작성 시도 → 404"""
+        refresh = RefreshToken.for_user(self.user2)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+        response = self.client.post('/api/review/9999/comment/create/', {
+            'content': '댓글'
+        })
+        self.assertEqual(response.status_code, 404)
+        print('✅ [PASS] 없는 리뷰 댓글 작성 → 404')
+
+    # ========== 19. 미인증 댓글 작성 → 401 ==========
+    def test_comment_create_unauthenticated(self):
+        """미인증 상태로 댓글 작성 시도 → 401"""
+        response = self.client.post(f'/api/review/{self.review1.id}/comment/create/', {
+            'content': '댓글'
+        })
+        self.assertEqual(response.status_code, 401)
+        print('✅ [PASS] 미인증 댓글 작성 → 401')
+
 
