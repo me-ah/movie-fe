@@ -1,7 +1,7 @@
-from rest_framework import views, status
+from rest_framework import views, status, serializers as drf_serializers
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
-from django.db.models import Case, When, Value, IntegerField
+from django.db.models import Case, When
 from drf_spectacular.utils import extend_schema
 from movies.models import Movie
 from .models import HomeCategory
@@ -16,11 +16,11 @@ class MainView(views.APIView):
     고정 메인 10개 영화 API
     """
     permission_classes = [AllowAny]
-    serializer_class = MainResponseSerializer # Swagger용
+    # serializer_class를 명시적으로 지정하여 drf-spectacular의 자동 분석을 도움
+    serializer_class = MainResponseSerializer
 
     @extend_schema(responses={200: MainResponseSerializer})
     def get(self, request):
-        # 종합 점수 기준 상위 10개
         movies = Movie.objects.all().order_by('-vote_average', '-view_count')[:10]
         
         user_data = {}
@@ -41,7 +41,7 @@ class SubView(views.APIView):
     맞춤 카테고리 30개 API (3차원 오브젝트 리턴)
     """
     permission_classes = [AllowAny]
-    serializer_class = SubResponseSerializer # Swagger용
+    serializer_class = SubResponseSerializer
 
     @extend_schema(responses={200: SubResponseSerializer})
     def get(self, request):
@@ -49,7 +49,6 @@ class SubView(views.APIView):
         categories = HomeCategory.objects.all().prefetch_related('movies')
 
         if user.is_authenticated:
-            # 유저의 pref_장르 점수 분석
             genre_scores = []
             genre_fields = [f for f in user._meta.get_fields() if f.name.startswith('pref_')]
             for field in genre_fields:
