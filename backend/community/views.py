@@ -6,7 +6,7 @@ from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 
-from .models import Review
+from .models import Review, ReviewComment
 from .serializers import ReviewListSerializer, ReviewDetailSerializer, CommunityReviewCreateSerializer, CommunityReviewUpdateSerializer, ReviewCommentSerializer
 
 
@@ -228,3 +228,46 @@ class ReviewCommentCreateView(APIView):
             "message": "댓글이 정상적으로 작성 됐습니다.",
             "comment": ReviewCommentSerializer(comment).data
         }, status=status.HTTP_200_OK)
+
+
+# ========== 댓글 목록 조회 (GET) ==========
+class ReviewCommentListView(APIView):
+    """
+    GET /api/review/{review_id}/comment/list/
+    댓글 목록 조회 (공개, 페이징 + 정렬)
+    """
+    permission_classes = [AllowAny]
+
+    @extend_schema(
+        summary="댓글 목록 조회",
+        description="특정 리뷰의 댓글 목록을 조회합니다. (페이징, 정렬)",
+        parameters=[
+            OpenApiParameter(name='page', description='페이지 번호', required=False, type=int),
+            OpenApiParameter(name='order', description='정렬 (asc: 오래된순, desc: 최신순)', required=False, type=str),
+        ],
+        responses=ReviewCommentSerializer(many=True)
+    )
+    def get(self, request, review_id):
+        # 리뷰 존재 여부 확인 (없으면 404)
+        review = get_object_or_404(Review, id=review_id)
+        
+        # 해당 리뷰의 댓글만 필터링
+        queryset = ReviewComment.objects.filter(review=review)
+
+        # ---- 정렬 ----
+        order = request.query_params.get('order', 'desc')  # 기본값: 최신순
+        if order == 'asc':
+            queryset = queryset.order_by('created_at')
+        else:
+            queryset = queryset.order_by('-created_at')
+
+        # ---- 페이징 ----
+        paginator = ReviewPagination()
+        page = paginator.paginate_queryset(queryset, request)
+
+        if page is not None:
+            serializer = ReviewCommentSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
+
+        serializer = ReviewCommentSerializer(queryset, many=True)
+        return Response(serializer.data)

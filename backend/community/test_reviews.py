@@ -287,3 +287,29 @@ class ReviewAPITest(TestCase):
         print('✅ [PASS] 미인증 댓글 작성 → 401')
 
 
+        print('✅ [PASS] 미인증 댓글 작성 → 401')
+
+    # ========== 20. 댓글 목록 조회 성공 → 200 ==========
+    def test_comment_list_success(self):
+        """댓글 목록 조회 (페이징 확인)"""
+        # 댓글 15개 생성
+        for i in range(15):
+            ReviewComment.objects.create(
+                user=self.user2,
+                review=self.review1,
+                content=f'댓글 {i}'
+            )
+        
+        response = self.client.get(f'/api/review/{self.review1.id}/comment/list/?page=1')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['count'], 17)  # setUp 2개 + 추가 15개 = 17개
+        self.assertEqual(len(response.data['results']), 10)  # 페이지당 10개
+        self.assertIsNotNone(response.data['next'])
+        print('✅ [PASS] 댓글 목록 조회 (페이징) → 200')
+
+    # ========== 21. 없는 리뷰 댓글 조회 → 404 ==========
+    def test_comment_list_not_found(self):
+        """없는 리뷰 ID 조회 시 404"""
+        response = self.client.get('/api/review/9999/comment/list/')
+        self.assertEqual(response.status_code, 404)
+        print('✅ [PASS] 없는 리뷰 댓글 조회 → 404')
