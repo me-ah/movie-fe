@@ -218,7 +218,8 @@ class WatchHistoryView(views.APIView):
                 "movie_id": movie_id,
                 "watch_time": watch_time
             }, status=status.HTTP_200_OK)
-
+        if watch_time > 50:
+            watch_time = 50
         # ---- 시청 기록 저장 (save()에서 장르 선호도 자동 업데이트) ----
         UserMovieHistory.objects.create(
             user=request.user,
