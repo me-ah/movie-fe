@@ -1,6 +1,7 @@
 "use client";
 
 import { useAtom } from "jotai";
+import Link from "next/link";
 import { countAtom } from "@/atoms/setAtoms";
 import { Button } from "@/components/ui/button";
 
@@ -33,6 +34,13 @@ export default function Home() {
 				</button>
 
 				<Button variant="outline">gdgd</Button>
+
+				{/* ✅ 영화 상세로 이동 */}
+				<Link href={`/movies/detail/`}>
+					<Button className="bg-green-500 hover:bg-green-600">
+						movieId 1로 이동
+					</Button>
+				</Link>
 			</div>
 		</div>
 	);
