@@ -9,6 +9,7 @@ import EditModal from "@/app/auth/mypage/edit_modal";
 import { Button } from "@/components/ui/button";
 import MyListSection, { type PosterItem } from "./my_list_section";
 import StatCard from "./my_statcard";
+import { getUser } from "@/lib/userStorage";
 
 type MyPageUser = {
 	userid: string;
@@ -82,7 +83,8 @@ export default function MyPage() {
 
 		const load = async () => {
 			try {
-				const data = await getMyPage();
+				const storedUser = getUser();
+				const data = await getMyPage({ userid: storedUser.user_id });
 				if (cancelled) return;
 
 				const norm = normalize(data);
@@ -201,7 +203,10 @@ export default function MyPage() {
 				open={settingsOpen}
 				onOpenChange={setSettingsOpen}
 				onSaved={async () => {
-					const data = await getMyPage();
+					const storedUser = getUser();
+					if (!storedUser?.user_id) return;
+
+					const data = await getMyPage({ userid: storedUser.user_id });
 					const norm = normalize(data);
 					setUser(norm.user);
 					setRecordItems(norm.recordItems);

@@ -116,6 +116,7 @@ export async function GET(req: Request) {
 	const data = await backendRes.json();
 	const accessToken = data.token as string | undefined;
 	const refreshToken = data.refresh as string | undefined;
+	const userId = data.user?.userid
 
 	if (!accessToken || !refreshToken) {
 		return NextResponse.redirect(`${appUrl}/auth?error=missing_app_tokens`);
@@ -125,6 +126,7 @@ export async function GET(req: Request) {
 	const redirect = new URL(`${appUrl}/auth/callback`);
 	redirect.searchParams.set("access", accessToken);
 	redirect.searchParams.set("refresh", refreshToken);
-
+	redirect.searchParams.set("userid", String(userId));
+	
 	return NextResponse.redirect(redirect.toString());
 }

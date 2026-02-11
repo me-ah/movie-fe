@@ -27,9 +27,8 @@ export default function Login() {
 			setLoading(true);
 			setError(null);
 
-			const { accessToken, refreshToken } = await login(username, password);
+			await login(username, password);
 
-			setTokens(accessToken, refreshToken);
 			router.push("/");
 		} catch (err: unknown) {
 			console.error("Login failed:", err);

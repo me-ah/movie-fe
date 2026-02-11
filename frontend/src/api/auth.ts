@@ -1,17 +1,22 @@
 // src/api/auth.ts
 
 import authClient from "@/lib/authClient";
+import { setTokens } from "@/lib/tokenStorage";
 import { setUser } from "@/lib/userStorage";
 
-type LoginResponse = {
-	accessToken: string;
-	refreshToken: string;
+export type LoginResponse = {
+	message: string;
 	user: {
-		id: number;
+		userid: number;
 		username: string;
-		email: string;
+		useremail: string;
+		firstname: string;
+		lastname: string;
 	};
+	token: string;
+	refresh: string;
 };
+
 
 export type SignupRequest = {
 	username: string;
@@ -27,13 +32,14 @@ export async function login(username: string, password: string) {
 		username,
 		password,
 	});
-	const { user } = res.data;
+
+	const { user, token, refresh } = res.data;
 
 	setUser({
-		user_id: user.id,
-		username: user.username,
-		email: user.email,
+		user_id: user.userid,
 	});
+	
+	setTokens(token, refresh);
 
 	return res.data;
 }

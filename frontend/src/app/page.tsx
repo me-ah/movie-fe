@@ -3,6 +3,7 @@
 import { useAtom } from "jotai";
 import { countAtom } from "@/atoms/setAtoms";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 
 export default function Home() {
 	const [count, setCount] = useAtom(countAtom);
@@ -32,7 +33,8 @@ export default function Home() {
 					-1
 				</button>
 
-				<Button variant="outline">gdgd</Button>
+				<Link href="/auth/login" className="text-zinc-300">로그인</Link>
+				<Link href="/auth/mypage" className="text-zinc-300">마이페이지</Link>
 			</div>
 		</div>
 	);
