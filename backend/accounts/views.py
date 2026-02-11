@@ -16,8 +16,10 @@ from .serializers import (
     CustomTokenObtainPairSerializer,
     LoginResponseSerializer,
     MyPageRequestSerializer,
-    MyPageResponseSerializer
+    MyPageResponseSerializer,
+    WatchHistorySerializer
 )
+from movies.models import Movie
 from .models import UserMovieHistory, UserMyList
 
 User = get_user_model()
@@ -180,3 +182,44 @@ class GoogleLoginView(views.APIView):
             user = User.objects.create_user(username=username, email=email or f"{username}@google.com", password=None, first_name=first_name, last_name=last_name, login_type='google')
         refresh = RefreshToken.for_user(user)
         return Response({"message": "로그인 성공", "user": {"userid": user.id, "username": user.username, "useremail": user.email, "firstname": user.first_name, "lastname": user.last_name}, "token": str(refresh.access_token), "refresh": str(refresh)})
+
+
+# ========== Watch History View ==========
+class WatchHistoryView(views.APIView):
+    """
+    POST /api/accounts/watch-history/
+    영화 체류 시간을 저장합니다.
+    """
+    permission_classes = (IsAuthenticated,)
+    serializer_class = WatchHistorySerializer
+
+    @extend_schema(request=WatchHistorySerializer)
+    def post(self, request):
+        serializer = WatchHistorySerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        movie_id = serializer.validated_data['movie_id']
+        watch_time = serializer.validated_data['watch_time']
+
+        # ---- 영화 조회 (없으면 404) ----
+        try:
+            movie = Movie.objects.get(movie_id=movie_id)
+        except Movie.DoesNotExist:
+            return Response(
+                {"error": "해당 영화를 찾을 수 없습니다."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        # ---- 시청 기록 저장 (save()에서 장르 선호도 자동 업데이트) ----
+        UserMovieHistory.objects.create(
+            user=request.user,
+            movie=movie,
+            watch_time=watch_time
+        )
+
+        return Response({
+            "message": "시청 기록이 저장되었습니다.",
+            "movie_id": movie_id,
+            "watch_time": watch_time
+        }, status=status.HTTP_201_CREATED)

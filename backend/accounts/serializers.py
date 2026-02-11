@@ -132,3 +132,10 @@ class MyPageResponseSerializer(serializers.Serializer):
     usermylist = serializers.IntegerField()
     recordmovie = serializers.DictField(child=serializers.DictField())
     mylistmovie = serializers.DictField(child=serializers.DictField())
+
+
+# ========== Watch History Serializer ==========
+class WatchHistorySerializer(serializers.Serializer):
+    movie_id = serializers.CharField()
+    watch_time = serializers.IntegerField(min_value=1)
+
