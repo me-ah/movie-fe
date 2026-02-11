@@ -2,7 +2,7 @@ from rest_framework import views, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.shortcuts import get_object_or_404
-from django.db.models import Avg
+from django.db.models import Avg, Case, When
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from movies.models import Movie
 from .models import HomeCategory, MovieReview
@@ -10,7 +10,6 @@ from .serializers import (
     HomeMovieSerializer, 
     MainResponseSerializer, 
     SubResponseSerializer,
-    MovieDetailRequestSerializer,
     MovieDetailResponseSerializer,
     MovieMiniSerializer,
     ReviewSerializer,
@@ -70,42 +69,36 @@ class SubView(views.APIView):
 
 class MovieDetailView(views.APIView):
     """
-    영화 상세 정보 API (POST)
+    영화 상세 정보 API (GET)
     """
     permission_classes = [AllowAny]
-    serializer_class = MovieDetailRequestSerializer
+    serializer_class = MovieDetailResponseSerializer
 
     @extend_schema(
-        request=MovieDetailRequestSerializer,
+        parameters=[OpenApiParameter("id", type=int, description="영화의 PK", required=True)],
         responses={200: MovieDetailResponseSerializer}
     )
-    def post(self, request):
-        movie_id = request.data.get('id')
+    def get(self, request):
+        # --- 쿼리 파라미터에서 ID 가져오기 ---
+        movie_id = request.query_params.get('id')
         if not movie_id:
-            return Response({"error": "Movie ID required in request body"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Movie ID required in query parameters (e.g. ?id=1)"}, status=status.HTTP_400_BAD_REQUEST)
         
         movie = get_object_or_404(Movie, id=movie_id)
         
-        # --- 정밀 추천 로직 시작 ---
-        # 1. 현재 영화의 장르 구성을 문자열 키로 변환 (예: '액션|코미디')
-        movie_genres = sorted([g.name for g in movie.genres.all()])
+        # 정밀 추천 로직
+        movie_genres = sorted([genre.name for genre in movie.genres.all()])
         exact_genre_key = "|".join(movie_genres)
-
-        # 2. 정확히 일치하는 카테고리 먼저 찾기
         related_category = HomeCategory.objects.filter(genre_key=exact_genre_key).first()
         
-        # 3. 없다면 차선책으로 이 영화를 포함한 아무 카테고리나 찾기
         if not related_category:
             related_category = HomeCategory.objects.filter(movies=movie).first()
 
         recommend_list = []
         if related_category:
-            # 해당 카테고리 내 다른 영화 10개 (평점순)
             recommend_list = related_category.movies.exclude(id=movie.id).order_by('-vote_average')[:10]
         else:
-            # 만약 어떤 카테고리에도 속하지 않는 경우 (예외 상황)
             recommend_list = Movie.objects.filter(genres__in=movie.genres.all()).exclude(id=movie.id).distinct().order_by('-vote_average')[:10]
-        # --- 정밀 추천 로직 끝 ---
 
         reviews = movie.reviews.all().select_related('author')[:10]
         year = str(movie.release_date.year) if movie.release_date else "미상"
