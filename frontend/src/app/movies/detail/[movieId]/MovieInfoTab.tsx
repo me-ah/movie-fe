@@ -1,5 +1,3 @@
-// src/app/movie/[movieId]/_components/tabs/MovieInfoTab.tsx
-
 type MovieDetail = {
 	overview?: string;
 	director?: string;

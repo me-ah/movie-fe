@@ -1,4 +1,3 @@
-// src/lib/userStorage.ts
 const USER_ID_KEY = "user_id";
 
 export function setUser(user: { user_id: number | string }) {

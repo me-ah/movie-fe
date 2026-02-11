@@ -8,7 +8,6 @@ import {
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
-// access 요청 로직
 const api = axios.create({
 	baseURL: BASE_URL,
 });
