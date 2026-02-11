@@ -18,5 +18,5 @@ urlpatterns = [
     path("api/home/", include("home.urls")),
 
     # Community (Review) API
-    path("api/review/", include("community.urls")),
+    path("api/community/review/", include("community.urls")),
 ]
