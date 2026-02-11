@@ -6,10 +6,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
+from django.db.models import F
 from drf_spectacular.utils import extend_schema
 
 from .models import Movie, Comment
 from .serializers import MovieShortsSerializer, CommentCreateSerializer, CommentResponseSerializer
+from accounts.models import UserLikeList
 
 
 # ========== Shorts API View ==========
@@ -66,7 +68,7 @@ class MovieShortsView(APIView):
             ).decode('utf-8')
 
         # ---- 직렬화 및 응답 ----
-        serializer = MovieShortsSerializer(movies_list, many=True)
+        serializer = MovieShortsSerializer(movies_list, many=True, context={'request': request})
 
         response_data = {
             'next_cursor': next_cursor,
@@ -101,7 +103,7 @@ class MovieShortsDetailView(APIView):
         movie = get_object_or_404(Movie, movie_id=movie_id)
 
         # ---- current: 해당 영화 직렬화 ----
-        current = MovieShortsSerializer(movie).data
+        current = MovieShortsSerializer(movie, context={'request': request}).data
 
         # ---- 이후 영화 목록 조회 (PK 기준 오름차순) ----
         page_size = min(int(request.query_params.get('page_size', 10)), 50)
@@ -128,7 +130,7 @@ class MovieShortsDetailView(APIView):
         return Response({
             'current': current,
             'next_cursor': next_cursor,
-            'results': MovieShortsSerializer(next_list, many=True).data,
+            'results': MovieShortsSerializer(next_list, many=True, context={'request': request}).data,
         })
 
 
@@ -204,6 +206,46 @@ class ShortsCommentDeleteView(APIView):
         return Response({
             "comment_id": comment_id,
             "message": "댓글이 삭제되었습니다."
+        }, status=status.HTTP_200_OK)
+
+
+# ========== Shorts Like View ==========
+class ShortsLikeView(APIView):
+    """
+    POST /api/movies/shorts/{movie_id}/like/
+    좋아요 토글 (등록 ↔ 취소)
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, movie_id):
+        # ---- 영화 조회 (없으면 404) ----
+        movie = get_object_or_404(Movie, movie_id=movie_id)
+
+        # ---- 좋아요 토글 ----
+        like, created = UserLikeList.objects.get_or_create(
+            movie=movie, user=request.user
+        )
+
+        if created:
+            # 좋아요 등록 → like_count +1
+            movie.like_count = F('like_count') + 1
+            movie.save(update_fields=['like_count'])
+            movie.refresh_from_db()
+            is_liked, message = True, "좋아요가 등록되었습니다."
+        else:
+            # 좋아요 취소 (토글) → like_count -1
+            like.delete()
+            movie.like_count = F('like_count') - 1
+            movie.save(update_fields=['like_count'])
+            movie.refresh_from_db()
+            is_liked, message = False, "좋아요가 취소되었습니다."
+
+        # ---- 응답 ----
+        return Response({
+            "movie_id": movie_id,
+            "is_liked": is_liked,
+            "total_likes": movie.like_count,
+            "message": message
         }, status=status.HTTP_200_OK)
 
 
