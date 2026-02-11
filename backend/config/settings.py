@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "accounts",
     "home",
     "movies",
+    "community",
 ]
 
 AUTH_USER_MODEL = 'accounts.User'
