@@ -120,10 +120,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class MyPageRequestSerializer(serializers.Serializer):
     userid = serializers.IntegerField()
-    username = serializers.CharField()
-    useremail = serializers.EmailField()
-    firstname = serializers.CharField()
-    lastname = serializers.CharField()
 
 class MovieMiniSerializer(serializers.Serializer):
     """Simplified movie info for MyPage"""
