@@ -1,64 +1,73 @@
 from django.core.management.base import BaseCommand
 from movies.models import Movie, Genre
 from home.models import HomeCategory
-from django.db.models import Count, F, Q
+from django.db.models import Count, Q, Avg
+import itertools
 
 class Command(BaseCommand):
-    help = '홈 화면의 50개 카테고리 데이터를 갱신합니다.'
+    help = '실제 DB의 장르 조합을 분석하여 정교한 50개 이상의 카테고리를 생성합니다.'
 
     def handle(self, *args, **options):
-        # 1. 기존 카테고리 데이터 초기화 (M2M 관계만 끊고 다시 설정)
-        # HomeCategory.objects.all().delete() # 필요시 삭제 후 재생성
+        HomeCategory.objects.all().delete()
+        self.stdout.write("기존 카테고리를 초기화했습니다.")
 
-        # 장르 맵핑 (19개 장르)
+        # 1. 스페셜 카테고리 (항상 상위 3개 노출용)
+        specials = [
+            ("지금 뜨는 인기작", "special_trending", "-view_count", Q()),
+            ("현재 상영 중인 영화", "special_theaters", "-view_count", Q(is_in_theaters=True)),
+            ("최고 평점의 명작", "special_top_rated", "-vote_average", Q(vote_average__gte=7.5)),
+        ]
+        for title, key, order, filters in specials:
+            cat = self.create_category(title, key, order, filters, 'special')
+
+        # 2. 단일 장르 (19개)
         genres = Genre.objects.all()
         for genre in genres:
-            category, _ = HomeCategory.objects.get_or_create(
-                title=f"인기 {genre.name}",
-                genre_key=genre.name.lower().replace(" ", "_")
+            self.create_category(
+                f"인기 {genre.name}",
+                genre.name, # 단일 장르명
+                "-view_count",
+                Q(genres=genre)
             )
-            # 해당 장르 영화 중 점수순 상위 15개
-            top_movies = Movie.objects.filter(genres=genre).order_by('-vote_average', '-view_count')[:15]
-            category.movies.set(top_movies)
-            category.base_score = genre.id # 임시 점수
-            category.save()
 
-        # 2. 통계 기반 섹션 (6개)
-        stats = [
-            ("지금 뜨는 콘텐츠", "-view_count", None),
-            ("최고 평점 명작", "-vote_average", None),
-            ("새로 올라온 영화", "-release_date", None),
-            ("좋아요 많은 영화", "-like_count", None),
-            ("현재 상영작", "-view_count", "is_in_theaters"),
-            ("다시 보기 좋은 영화", "?", None), # 랜덤
-        ]
-        for title, order, filter_key in stats:
-            category, _ = HomeCategory.objects.get_or_create(title=title)
-            queryset = Movie.objects.all()
-            if filter_key:
-                queryset = queryset.filter(**{filter_key: True})
+        # 3. 혼합 장르 (실제 DB 조합 분석)
+        # 영화들마다 가진 장르 조합을 추출
+        all_movies = Movie.objects.prefetch_related('genres').all()
+        genre_combinations = {}
+
+        for movie in all_movies:
+            movie_genres = sorted([g.name for g in movie.genres.all()])
+            if len(movie_genres) >= 2:
+                combo_key = "|".join(movie_genres)
+                if combo_key not in genre_combinations:
+                    genre_combinations[combo_key] = []
+                genre_combinations[combo_key].append(movie.id)
+
+        # 영화가 3개 이상인 조합만 카테고리화
+        for combo_key, movie_ids in genre_combinations.items():
+            genre_names = combo_key.split('|')
+            title = f"{' '.join(genre_names)} 매니아를 위해"
             
-            top_movies = queryset.order_by(order)[:15]
-            category.movies.set(top_movies)
-            category.save()
+            # 너무 긴 제목 방지
+            if len(genre_names) > 3:
+                title = f"{' '.join(genre_names[:3])} 외.."
 
-        # 3. 장르 조합 (남은 개수만큼 생성)
-        # 예시: 액션+코미디, 드라마+로맨스 등 (필요에 따라 추가)
-        combinations = [
-            ("액션 코미디", ["Action", "Comedy"]),
-            ("범죄 스릴러", ["Crime", "Thriller"]),
-            ("로맨틱 판타지", ["Romance", "Fantasy"]),
-            ("SF 액션", ["Science Fiction", "Action"]),
-            ("음악 드라마", ["Music", "Drama"]),
-        ]
-        for title, genre_names in combinations:
-            category, _ = HomeCategory.objects.get_or_create(title=title)
-            queryset = Movie.objects.all()
-            for g_name in genre_names:
-                queryset = queryset.filter(genres__name=g_name)
-            
-            top_movies = queryset.order_by('-vote_average')[:15]
-            category.movies.set(top_movies)
-            category.save()
+            cat = HomeCategory.objects.create(
+                title=title,
+                genre_key=combo_key,
+                category_type='general'
+            )
+            cat.movies.set(Movie.objects.filter(id__in=movie_ids).order_by('-vote_average')[:15])
+            cat.save()
 
-        self.stdout.write(self.style.SUCCESS('Successfully refreshed home categories'))
+        count = HomeCategory.objects.count()
+        self.stdout.write(self.style.SUCCESS(f'총 {count}개의 카테고리 분석 및 생성 완료!'))
+
+    def create_category(self, title, key, order, filters, cat_type='general'):
+        movies = Movie.objects.filter(filters).distinct()
+        if movies.exists():
+            cat = HomeCategory.objects.create(title=title, genre_key=key, category_type=cat_type)
+            cat.movies.set(movies.order_by(order)[:15])
+            cat.save()
+            return cat
+        return None
