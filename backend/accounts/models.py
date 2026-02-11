@@ -2,6 +2,30 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.db.models import F
 
+
+# ========== 장르 ID → pref 필드 매핑 딕셔너리 ==========
+GENRE_ID_TO_PREF_FIELD = {
+    28: 'pref_action',
+    12: 'pref_adventure',
+    16: 'pref_animation',
+    35: 'pref_comedy',
+    80: 'pref_crime',
+    99: 'pref_documentary',
+    18: 'pref_drama',
+    10751: 'pref_family',
+    14: 'pref_fantasy',
+    36: 'pref_history',
+    27: 'pref_horror',
+    10402: 'pref_music',
+    9648: 'pref_mystery',
+    10749: 'pref_romance',
+    878: 'pref_science_fiction',
+    10770: 'pref_tv_movie',
+    53: 'pref_thriller',
+    10752: 'pref_war',
+    37: 'pref_western',
+}
+
 class User(AbstractUser):
     LOGIN_TYPE_CHOICES = [
         ('email', 'Email'),
@@ -54,11 +78,10 @@ class UserMovieHistory(models.Model):
             movie = self.movie
             genres = movie.genres.all()
             
-            # Mapping genre name to field name
-            # Genre names in TMDB are like "Action", "Science Fiction"
+            # 장르 ID → pref 필드 매핑 딕셔너리 사용 (한국어/영어 장르명 무관)
             for genre in genres:
-                field_name = f"pref_{genre.name.lower().replace(' ', '_')}"
-                if hasattr(user, field_name):
+                field_name = GENRE_ID_TO_PREF_FIELD.get(genre.id)
+                if field_name:
                     setattr(user, field_name, F(field_name) + self.watch_time)
             user.save()
 
