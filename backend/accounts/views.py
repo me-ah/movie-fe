@@ -61,56 +61,77 @@ class MyPageView(views.APIView):
     @extend_schema(request=MyPageRequestSerializer, responses={200: MyPageResponseSerializer})
     def post(self, request):
         user = request.user
-        # Verify if the provided userid matches the authenticated user
-        if user.id != request.data.get('userid'):
+        request_userid = request.data.get('userid')
+
+        # 1. 필수 파라미터 누락 체크
+        if request_userid is None:
+            return Response({
+                "error": "MISSING_PARAMETER",
+                "message": "userid 파라미터가 누락되었습니둥"
+            }, status=status.HTTP_400_BAD_REQUEST)
+
+        # 2. 유저 일치 여부 확인 (인증된 토큰의 유저와 요청한 userid 비교)
+        try:
+            if int(user.id) != int(request_userid):
+                return Response({
+                    "error": "NOT_USER_DATA",
+                    "message": "인증 정보와 요청한 유저 ID가 일치하지 않습니둥"
+                }, status=status.HTTP_404_NOT_FOUND)
+        except (ValueError, TypeError):
              return Response({
-                "error": "NOT_USER_DATA",
-                "message": "잘못된 요청입니둥"
-            }, status=status.HTTP_404_NOT_FOUND)
+                "error": "INVALID_PARAMETER",
+                "message": "userid는 숫자 형식이어야 합니둥"
+            }, status=status.HTTP_400_BAD_REQUEST)
 
-        # 1. User Data
-        userdata = {
-            "userid": str(user.id),
-            "username": user.username,
-            "useremail": user.email,
-            "firstname": user.first_name,
-            "lastname": user.last_name,
-        }
-
-        # 2. Watch Time (Sum of all watch histories)
-        watchtime_sum = UserMovieHistory.objects.filter(user=user).aggregate(Sum('watch_time'))['watch_time__sum'] or 0
-
-        # 3. User MyList Count
-        usermylist_count = UserMyList.objects.filter(user=user).count()
-
-        # 4. Record Movies (Recent 10)
-        # Structure: "recordmovie": { "pk": { "name": "...", "poster": "..." }, ... }
-        record_movies_qs = UserMovieHistory.objects.filter(user=user).select_related('movie')[:10]
-        recordmovie = {}
-        for history in record_movies_qs:
-            recordmovie[str(history.movie.id)] = {
-                "recordmovie_name": history.movie.title,
-                "recordmovie_poster": history.movie.poster_path
+        try:
+            # 3. 데이터 조립
+            userdata = {
+                "userid": str(user.id),
+                "username": user.username,
+                "useremail": user.email,
+                "firstname": user.first_name,
+                "lastname": user.last_name,
             }
 
-        # 5. MyList Movies (Recent 10)
-        mylist_movies_qs = UserMyList.objects.filter(user=user).select_related('movie')[:10]
-        mylistmovie = {}
-        for item in mylist_movies_qs:
-            mylistmovie[str(item.movie.id)] = {
-                "mylistmovie_name": item.movie.title,
-                "mylistmovie_poster": item.movie.poster_path
+            # 시청 시간 합산
+            watchtime_sum = UserMovieHistory.objects.filter(user=user).aggregate(Sum('watch_time'))['watch_time__sum'] or 0
+
+            # 찜 목록 개수
+            usermylist_count = UserMyList.objects.filter(user=user).count()
+
+            # 시청 기록 영화 (최근 10개)
+            record_movies_qs = UserMovieHistory.objects.filter(user=user).select_related('movie').order_by('-watched_at')[:10]
+            recordmovie = {}
+            for history in record_movies_qs:
+                recordmovie[str(history.movie.id)] = {
+                    "recordmovie_name": history.movie.title,
+                    "recordmovie_poster": history.movie.poster_path
+                }
+
+            # 찜한 영화 (최근 10개)
+            mylist_movies_qs = UserMyList.objects.filter(user=user).select_related('movie').order_by('-created_at')[:10]
+            mylistmovie = {}
+            for item in mylist_movies_qs:
+                mylistmovie[str(item.movie.id)] = {
+                    "mylistmovie_name": item.movie.title,
+                    "mylistmovie_poster": item.movie.poster_path
+                }
+
+            response_data = {
+                "userdata": userdata,
+                "watchtime": str(watchtime_sum),
+                "usermylist": str(usermylist_count),
+                "recordmovie": recordmovie,
+                "mylistmovie": mylistmovie
             }
 
-        response_data = {
-            "userdata": userdata,
-            "watchtime": str(watchtime_sum),
-            "usermylist": str(usermylist_count),
-            "recordmovie": recordmovie,
-            "mylistmovie": mylistmovie
-        }
+            return Response(response_data, status=status.HTTP_200_OK)
 
-        return Response(response_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            return Response({
+                "error": "SERVER_ERROR",
+                "message": f"데이터 조회 중 서버 에러가 발생했습니둥: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class KakaoLoginView(views.APIView):
     permission_classes = (AllowAny,)
