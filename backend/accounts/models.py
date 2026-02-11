@@ -34,6 +34,9 @@ class User(AbstractUser):
     ]
     login_type = models.CharField(max_length=10, choices=LOGIN_TYPE_CHOICES, default='email')
     
+    # Onboarding Completion Status
+    is_onboarding_completed = models.BooleanField(default=False)
+    
     # Genre Preferences - Integer fields (Default 0)
     # These will store accumulated watch time (seconds) per genre
     pref_action = models.IntegerField(default=0, null=True, blank=True)

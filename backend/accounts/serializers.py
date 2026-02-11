@@ -82,6 +82,7 @@ class UserDataSerializer(serializers.Serializer):
     useremail = serializers.EmailField(source='email')
     firstname = serializers.CharField(source='first_name')
     lastname = serializers.CharField(source='last_name')
+    onboarding = serializers.BooleanField(source='is_onboarding_completed')
 
 class LoginResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
@@ -110,7 +111,8 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 "username": user.username,
                 "useremail": user.email,
                 "firstname": user.first_name,
-                "lastname": user.last_name
+                "lastname": user.last_name,
+                "onboarding": user.is_onboarding_completed
             },
             "token": str(refresh.access_token),
             "refresh": str(refresh)
@@ -148,4 +150,27 @@ class MyPageResponseSerializer(serializers.Serializer):
 class WatchHistorySerializer(serializers.Serializer):
     movie_id = serializers.CharField()
     watch_time = serializers.IntegerField(min_value=1)
+
+# ========== Onboarding Serializer (신규) ==========
+class OnboardingSerializer(serializers.Serializer):
+    """최초 1회 장르 취향 수집용 시리얼라이저"""
+    pref_action = serializers.BooleanField(default=False)
+    pref_adventure = serializers.BooleanField(default=False)
+    pref_animation = serializers.BooleanField(default=False)
+    pref_comedy = serializers.BooleanField(default=False)
+    pref_crime = serializers.BooleanField(default=False)
+    pref_documentary = serializers.BooleanField(default=False)
+    pref_drama = serializers.BooleanField(default=False)
+    pref_family = serializers.BooleanField(default=False)
+    pref_fantasy = serializers.BooleanField(default=False)
+    pref_history = serializers.BooleanField(default=False)
+    pref_horror = serializers.BooleanField(default=False)
+    pref_music = serializers.BooleanField(default=False)
+    pref_mystery = serializers.BooleanField(default=False)
+    pref_romance = serializers.BooleanField(default=False)
+    pref_science_fiction = serializers.BooleanField(default=False)
+    pref_tv_movie = serializers.BooleanField(default=False)
+    pref_thriller = serializers.BooleanField(default=False)
+    pref_war = serializers.BooleanField(default=False)
+    pref_western = serializers.BooleanField(default=False)
 
