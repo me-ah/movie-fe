@@ -20,22 +20,53 @@ class ReviewCommentSerializer(serializers.ModelSerializer):
         read_only_fields = ['id', 'user', 'review', 'created_at']
 
 
-# ========== 리뷰 목록용 (comments 제외) ==========
-class ReviewListSerializer(serializers.ModelSerializer):
-    """리뷰 목록 시리얼라이저"""
+# ========== 좋아요 필드 Mixin ==========
+class LikeFieldsMixin(serializers.Serializer):
+    """like_users_count, is_liked 공통 필드"""
+    like_users_count = serializers.SerializerMethodField()
+    is_liked = serializers.SerializerMethodField()
+
+    def get_like_users_count(self, obj):
+        return obj.like_users.count()
+
+    def get_is_liked(self, obj):
+        request = self.context.get('request')
+        if request and hasattr(request, 'user') and request.user.is_authenticated:
+            return obj.like_users.filter(id=request.user.id).exists()
+        return False
+
+
+# ========== 리뷰 작성용 ==========
+class CommunityReviewCreateSerializer(serializers.ModelSerializer):
+    """리뷰 작성 시리얼라이저"""
+    title = serializers.CharField(max_length=200)
+    movie_title = serializers.CharField(max_length=200)
+    rank = serializers.IntegerField()
+    content = serializers.CharField()
+
+    class Meta:
+        model = Review
+        fields = ['title', 'movie_title', 'rank', 'content']
+
+
+# ========== 리뷰 응답용 (작성/목록 공통) ==========
+class ReviewListSerializer(LikeFieldsMixin, serializers.ModelSerializer):
+    """리뷰 목록/작성 응답 시리얼라이저"""
     user = ReviewUserSerializer(read_only=True)
 
     class Meta:
         model = Review
-        fields = ['id', 'title', 'movie_title', 'rank', 'content', 'user', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'movie_title', 'rank', 'content', 'user',
+                  'like_users_count', 'is_liked', 'created_at', 'updated_at']
 
 
 # ========== 리뷰 상세용 (comments 포함) ==========
-class ReviewDetailSerializer(serializers.ModelSerializer):
+class ReviewDetailSerializer(LikeFieldsMixin, serializers.ModelSerializer):
     """리뷰 상세 시리얼라이저 — 댓글 포함"""
     user = ReviewUserSerializer(read_only=True)
     comments = ReviewCommentSerializer(many=True, read_only=True)
 
     class Meta:
         model = Review
-        fields = ['id', 'title', 'movie_title', 'rank', 'content', 'user', 'comments', 'created_at', 'updated_at']
+        fields = ['id', 'title', 'movie_title', 'rank', 'content', 'user',
+                  'comments', 'like_users_count', 'is_liked', 'created_at', 'updated_at']

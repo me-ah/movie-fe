@@ -12,6 +12,9 @@ class Review(models.Model):
     movie_title = models.CharField(max_length=200)     # 영화 제목 (텍스트)
     rank = models.IntegerField()                        # 평점 (1~10)
     content = models.TextField()                        # 리뷰 본문
+    like_users = models.ManyToManyField(                # 좋아요 누른 유저들
+        settings.AUTH_USER_MODEL, related_name='liked_reviews', blank=True
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

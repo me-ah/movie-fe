@@ -111,3 +111,58 @@ class ReviewAPITest(TestCase):
         response = self.client.get('/api/review/99999/')
         self.assertEqual(response.status_code, 404)
         print('✅ [PASS] 없는 review_id → 404')
+
+    # ========== 7. 리뷰 작성 성공 → 201 ==========
+    def test_review_create_success(self):
+        """인증된 사용자가 리뷰 작성 성공"""
+        refresh = RefreshToken.for_user(self.user1)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+        response = self.client.post('/api/review/create/', {
+            'title': '스파이더맨 액션 시퀀스가 대박!',
+            'movie_title': '스파이더맨: 노 웨이 홈',
+            'rank': 9,
+            'content': '스파이더맨 3명이 함께 나오는 장면은 정말 소름돋았습니다.'
+        })
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.data['message'], '게시글이 성공적으로 작성되었습니다.')
+        post = response.data['post']
+        self.assertEqual(post['title'], '스파이더맨 액션 시퀀스가 대박!')
+        self.assertEqual(post['user']['username'], 'testuser1')
+        self.assertEqual(post['like_users_count'], 0)
+        self.assertFalse(post['is_liked'])
+        print('✅ [PASS] 리뷰 작성 → 201 + 응답 필드 확인')
+
+    # ========== 8. 미인증 → 401 ==========
+    def test_review_create_unauthenticated(self):
+        """인증 없이 리뷰 작성 → 401"""
+        response = self.client.post('/api/review/create/', {
+            'title': '테스트', 'movie_title': '테스트', 'rank': 5, 'content': '테스트'
+        })
+        self.assertEqual(response.status_code, 401)
+        print('✅ [PASS] 미인증 리뷰 작성 → 401')
+
+    # ========== 9. title 누락 → 400 ==========
+    def test_review_create_missing_title(self):
+        """title 누락 시 400"""
+        refresh = RefreshToken.for_user(self.user1)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+        response = self.client.post('/api/review/create/', {
+            'movie_title': '테스트', 'rank': 5, 'content': '테스트'
+        })
+        self.assertEqual(response.status_code, 400)
+        print('✅ [PASS] title 누락 → 400')
+
+    # ========== 10. content 누락 → 400 ==========
+    def test_review_create_missing_content(self):
+        """content 누락 시 400"""
+        refresh = RefreshToken.for_user(self.user1)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+        response = self.client.post('/api/review/create/', {
+            'title': '테스트', 'movie_title': '테스트', 'rank': 5
+        })
+        self.assertEqual(response.status_code, 400)
+        print('✅ [PASS] content 누락 → 400')
+

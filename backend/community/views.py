@@ -1,12 +1,13 @@
+from drf_spectacular.utils import extend_schema, OpenApiParameter
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import status
 from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 
 from .models import Review
-from .serializers import ReviewListSerializer, ReviewDetailSerializer
+from .serializers import ReviewListSerializer, ReviewDetailSerializer, CommunityReviewCreateSerializer
 
 
 # ========== 페이지네이션 설정 ==========
@@ -24,6 +25,18 @@ class ReviewListView(APIView):
     """
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        summary="리뷰 목록 조회",
+        description="영화 리뷰 목록을 조회합니다. 검색, 필터, 정렬, 페이징을 지원합니다.",
+        parameters=[
+            OpenApiParameter(name='page', description='페이지 번호', required=False, type=int),
+            OpenApiParameter(name='search', description='영화 제목 검색', required=False, type=str),
+            OpenApiParameter(name='rating', description='평점 필터 (1~10)', required=False, type=int),
+            OpenApiParameter(name='type', description='정렬 기준 (rating, title, movie_title, created_at)', required=False, type=str),
+            OpenApiParameter(name='order', description='정렬 방향 (asc, desc)', required=False, type=str),
+        ],
+        responses=ReviewListSerializer(many=True)
+    )
     def get(self, request):
         queryset = Review.objects.all()
 
@@ -64,10 +77,11 @@ class ReviewListView(APIView):
         page = paginator.paginate_queryset(queryset, request)
 
         if page is not None:
-            serializer = ReviewListSerializer(page, many=True)
+            # context에 request 전달 (is_liked 필드용)
+            serializer = ReviewListSerializer(page, many=True, context={'request': request})
             return paginator.get_paginated_response(serializer.data)
 
-        serializer = ReviewListSerializer(queryset, many=True)
+        serializer = ReviewListSerializer(queryset, many=True, context={'request': request})
         return Response(serializer.data)
 
 
@@ -79,7 +93,42 @@ class ReviewDetailView(APIView):
     """
     permission_classes = [AllowAny]
 
+    @extend_schema(
+        summary="리뷰 상세 조회",
+        description="특정 리뷰의 상세 정보와 댓글 목록을 조회합니다.",
+        responses=ReviewDetailSerializer
+    )
     def get(self, request, review_id):
         review = get_object_or_404(Review, id=review_id)
-        serializer = ReviewDetailSerializer(review)
+        serializer = ReviewDetailSerializer(review, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+# ========== 리뷰 작성 ==========
+class ReviewCreateView(APIView):
+    """
+    POST /api/review/create/
+    리뷰 게시글 작성 (JWT 인증 필수)
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="리뷰 작성",
+        description="새로운 영화 리뷰를 작성합니다. (JWT 인증 필수)",
+        request=CommunityReviewCreateSerializer,
+        responses={201: ReviewListSerializer}
+    )
+    def post(self, request):
+        serializer = CommunityReviewCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # ---- 리뷰 저장 (user 자동 설정) ----
+        review = serializer.save(user=request.user)
+
+        # ---- 응답 데이터 생성 ----
+        response_serializer = ReviewListSerializer(review, context={'request': request})
+        return Response({
+            "message": "게시글이 성공적으로 작성되었습니다.",
+            "post": response_serializer.data
+        }, status=status.HTTP_201_CREATED)
