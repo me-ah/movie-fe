@@ -86,12 +86,26 @@ class MovieDetailView(views.APIView):
         
         movie = get_object_or_404(Movie, id=movie_id)
         
-        related_category = HomeCategory.objects.filter(movies=movie).first()
+        # --- 정밀 추천 로직 시작 ---
+        # 1. 현재 영화의 장르 구성을 문자열 키로 변환 (예: '액션|코미디')
+        movie_genres = sorted([g.name for g in movie.genres.all()])
+        exact_genre_key = "|".join(movie_genres)
+
+        # 2. 정확히 일치하는 카테고리 먼저 찾기
+        related_category = HomeCategory.objects.filter(genre_key=exact_genre_key).first()
+        
+        # 3. 없다면 차선책으로 이 영화를 포함한 아무 카테고리나 찾기
+        if not related_category:
+            related_category = HomeCategory.objects.filter(movies=movie).first()
+
         recommend_list = []
         if related_category:
-            recommend_list = related_category.movies.exclude(id=movie.id)[:10]
+            # 해당 카테고리 내 다른 영화 10개 (평점순)
+            recommend_list = related_category.movies.exclude(id=movie.id).order_by('-vote_average')[:10]
         else:
-            recommend_list = Movie.objects.filter(genres__in=movie.genres.all()).exclude(id=movie.id).distinct()[:10]
+            # 만약 어떤 카테고리에도 속하지 않는 경우 (예외 상황)
+            recommend_list = Movie.objects.filter(genres__in=movie.genres.all()).exclude(id=movie.id).distinct().order_by('-vote_average')[:10]
+        # --- 정밀 추천 로직 끝 ---
 
         reviews = movie.reviews.all().select_related('author')[:10]
         year = str(movie.release_date.year) if movie.release_date else "미상"
@@ -107,7 +121,7 @@ class MovieDetailView(views.APIView):
             "MovieDetail": {
                 "overview": movie.overview,
                 "director": None,
-                "genres": [g.name for g in movie.genres.all()],
+                "genres": movie_genres,
                 "year": int(year) if year.isdigit() else 0
             },
             "ReviewItem": ReviewSerializer(reviews, many=True).data,
