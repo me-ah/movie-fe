@@ -187,3 +187,51 @@ class ShortsCommentAPITest(TestCase):
         self.assertEqual(response.status_code, 404)
         print('✅ [PASS] 없는 comment_id 삭제 → 404')
 
+    # ========== 10. 댓글 목록 조회 → 200 ==========
+    def test_comment_list_success(self):
+        """댓글 작성 후 조회하면 comments 배열에 포함"""
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        # 댓글 2개 생성
+        self.client.post(
+            '/api/movies/shorts/27205/comments/',
+            {'content': '첫 번째 댓글'},
+            format='json'
+        )
+        self.client.post(
+            '/api/movies/shorts/27205/comments/',
+            {'content': '두 번째 댓글'},
+            format='json'
+        )
+
+        # 조회
+        response = self.client.get('/api/movies/shorts/27205/comments/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['movie_id'], '27205')
+        self.assertEqual(len(response.data['comments']), 2)
+        print('✅ [PASS] 댓글 목록 조회 → 200')
+
+    # ========== 11. 미인증 조회 → 200 (로그인 불필요) ==========
+    def test_comment_list_unauthenticated(self):
+        """로그인 없이도 댓글 조회 가능"""
+        # 인증 없이 조회
+        response = self.client.get('/api/movies/shorts/27205/comments/')
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('comments', response.data)
+        print('✅ [PASS] 미인증 조회 → 200')
+
+    # ========== 12. 없는 movie_id 조회 → 404 ==========
+    def test_comment_list_movie_not_found(self):
+        """존재하지 않는 movie_id로 조회 → 404"""
+        response = self.client.get('/api/movies/shorts/99999/comments/')
+        self.assertEqual(response.status_code, 404)
+        print('✅ [PASS] 없는 movie_id 조회 → 404')
+
+    # ========== 13. 댓글 없는 영화 → 200 + 빈 배열 ==========
+    def test_comment_list_empty(self):
+        """댓글이 없는 영화 조회 → 200 + 빈 comments 배열"""
+        response = self.client.get('/api/movies/shorts/27205/comments/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['comments'], [])
+        print('✅ [PASS] 댓글 없는 영화 → 200 + 빈 배열')
+
+

@@ -135,12 +135,28 @@ class MovieShortsDetailView(APIView):
 # ========== Shorts Comment View ==========
 class ShortsCommentView(APIView):
     """
-    POST /api/movies/shorts/{movie_id}/comments/
-    Shorts 영화에 댓글을 작성합니다.
+    GET  /api/movies/shorts/{movie_id}/comments/ — 댓글 목록 조회 (로그인 불필요)
+    POST /api/movies/shorts/{movie_id}/comments/ — 댓글 작성 (로그인 필수)
     """
-    permission_classes = [IsAuthenticated]
     serializer_class = CommentCreateSerializer
 
+    # ---- GET은 비로그인, POST는 로그인 필수 ----
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    # ---- 댓글 목록 조회 ----
+    def get(self, request, movie_id):
+        movie = get_object_or_404(Movie, movie_id=movie_id)
+        comments = Comment.objects.filter(movie=movie)
+        serializer = CommentResponseSerializer(comments, many=True)
+        return Response({
+            "movie_id": movie_id,
+            "comments": serializer.data
+        }, status=status.HTTP_200_OK)
+
+    # ---- 댓글 작성 ----
     @extend_schema(request=CommentCreateSerializer, responses={201: CommentResponseSerializer})
     def post(self, request, movie_id):
         # ---- 댓글 내용 검증 ----
