@@ -167,3 +167,31 @@ class ReviewUpdateView(APIView):
             "message": "게시글 수정 완료",
             "post": response_serializer.data
         }, status=status.HTTP_200_OK)
+
+
+# ========== 리뷰 삭제 (DELETE) ==========
+class ReviewDeleteView(APIView):
+    """
+    DELETE /api/review/{review_id}/delete/
+    리뷰 삭제 (작성자 본인만 가능)
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="리뷰 삭제",
+        description="본인이 작성한 리뷰를 삭제합니다.",
+        responses={200: None}
+    )
+    def delete(self, request, review_id):
+        review = get_object_or_404(Review, id=review_id)
+
+        # ---- 작성자 검증 ----
+        if review.user != request.user:
+            return Response({"error": "본인의 게시글만 삭제할 수 있습니다."}, status=status.HTTP_403_FORBIDDEN)
+
+        title = review.title  # 삭제 전 제목 저장
+        review.delete()
+
+        return Response({
+            "message": f'작성하신 게시글 "{title}"이(가) 성공적으로 삭제 되었습니다.'
+        }, status=status.HTTP_200_OK)

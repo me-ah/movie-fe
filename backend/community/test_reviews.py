@@ -207,4 +207,40 @@ class ReviewAPITest(TestCase):
         self.assertEqual(response.status_code, 401)
         print('✅ [PASS] 미인증 수정 시도 → 401')
 
+    # ========== 14. 리뷰 삭제 (DELETE) 성공 → 200 ==========
+    def test_review_delete_success(self):
+        """작성자 본인이 리뷰 삭제"""
+        refresh = RefreshToken.for_user(self.user1)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+        # 삭제할 리뷰 ID
+        review_id = self.review1.id
+        title = self.review1.title
+
+        response = self.client.delete(f'/api/review/{review_id}/delete/')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['message'], f'작성하신 게시글 "{title}"이(가) 성공적으로 삭제 되었습니다.')
+
+        # DB 삭제 확인
+        self.assertFalse(Review.objects.filter(id=review_id).exists())
+        print('✅ [PASS] 리뷰 삭제 (DELETE) → 200 + DB 삭제 확인')
+
+    # ========== 15. 타인의 글 삭제 시도 → 403 ==========
+    def test_review_delete_forbidden(self):
+        """타인의 리뷰 삭제 시도 → 403"""
+        refresh = RefreshToken.for_user(self.user2)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
+
+        response = self.client.delete(f'/api/review/{self.review1.id}/delete/')
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.data['error'], '본인의 게시글만 삭제할 수 있습니다.')
+        print('✅ [PASS] 타인 글 삭제 시도 → 403')
+
+    # ========== 16. 미인증 삭제 시도 → 401 ==========
+    def test_review_delete_unauthenticated(self):
+        """미인증 상태로 삭제 시도 → 401"""
+        response = self.client.delete(f'/api/review/{self.review1.id}/delete/')
+        self.assertEqual(response.status_code, 401)
+        print('✅ [PASS] 미인증 삭제 시도 → 401')
+
 
