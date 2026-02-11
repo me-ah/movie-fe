@@ -15,10 +15,10 @@ class ReviewAPITest(TestCase):
         """테스트용 데이터 생성"""
         # ---- 유저 생성 ----
         cls.user1 = User.objects.create_user(
-            username='testuser1', email='test1@test.com', password='testpass1234!'
+            username='testuser1', first_name='길동', last_name='홍', email='test1@test.com', password='testpass1234!'
         )
         cls.user2 = User.objects.create_user(
-            username='testuser2', email='test2@test.com', password='testpass1234!'
+            username='testuser2', first_name='철수', last_name='김', email='test2@test.com', password='testpass1234!'
         )
 
         # ---- 리뷰 생성 ----
@@ -60,7 +60,7 @@ class ReviewAPITest(TestCase):
     # ========== 1. 리뷰 목록 조회 → 200 ==========
     def test_review_list_success(self):
         """리뷰 목록 조회 성공"""
-        response = self.client.get('/api/review/list/')
+        response = self.client.get('/api/community/review/list/')
         self.assertEqual(response.status_code, 200)
         self.assertIn('results', response.data)
         self.assertEqual(response.data['count'], 3)
@@ -69,7 +69,7 @@ class ReviewAPITest(TestCase):
     # ========== 2. search 파라미터로 영화 제목 검색 ==========
     def test_review_list_search(self):
         """영화 제목으로 검색"""
-        response = self.client.get('/api/review/list/', {'search': '어벤져스'})
+        response = self.client.get('/api/community/review/list/', {'search': '어벤져스'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['count'], 2)
         print('✅ [PASS] search=어벤져스 → 2건')
@@ -77,7 +77,7 @@ class ReviewAPITest(TestCase):
     # ========== 3. rating 필터 ==========
     def test_review_list_rating_filter(self):
         """평점 필터링"""
-        response = self.client.get('/api/review/list/', {'rating': '10'})
+        response = self.client.get('/api/community/review/list/', {'rating': '10'})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['count'], 1)
         self.assertEqual(response.data['results'][0]['movie_title'], '인터스텔라')
@@ -86,7 +86,7 @@ class ReviewAPITest(TestCase):
     # ========== 4. 정렬 (type + order) ==========
     def test_review_list_sort(self):
         """정렬 기능 — rating 오름차순"""
-        response = self.client.get('/api/review/list/', {'type': 'rating', 'order': 'asc'})
+        response = self.client.get('/api/community/review/list/', {'type': 'rating', 'order': 'asc'})
         self.assertEqual(response.status_code, 200)
         results = response.data['results']
         self.assertEqual(results[0]['rank'], 6)   # 가장 낮은 평점 먼저
@@ -96,19 +96,22 @@ class ReviewAPITest(TestCase):
     # ========== 5. 리뷰 상세 조회 → 200 + comments 포함 ==========
     def test_review_detail_success(self):
         """리뷰 상세 조회 — 댓글 포함"""
-        response = self.client.get(f'/api/review/{self.review1.id}/')
+        response = self.client.get(f'/api/community/review/{self.review1.id}/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['title'], '정말 재밌는 영화!')
         self.assertEqual(response.data['movie_title'], '어벤져스 1')
         self.assertEqual(response.data['rank'], 9)
         self.assertEqual(len(response.data['comments']), 2)
         self.assertEqual(response.data['user']['username'], 'testuser1')
+        self.assertEqual(response.data['user']['email'], 'test1@test.com')
+        self.assertEqual(response.data['user']['first_name'], '길동')
+        self.assertEqual(response.data['user']['last_name'], '홍')
         print('✅ [PASS] 리뷰 상세 조회 → 200 + 댓글 2개')
 
     # ========== 6. 없는 review_id → 404 ==========
     def test_review_detail_not_found(self):
         """존재하지 않는 review_id → 404"""
-        response = self.client.get('/api/review/99999/')
+        response = self.client.get('/api/community/review/99999/')
         self.assertEqual(response.status_code, 404)
         print('✅ [PASS] 없는 review_id → 404')
 
@@ -118,7 +121,7 @@ class ReviewAPITest(TestCase):
         refresh = RefreshToken.for_user(self.user1)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
 
-        response = self.client.post('/api/review/create/', {
+        response = self.client.post('/api/community/review/create/', {
             'title': '스파이더맨 액션 시퀀스가 대박!',
             'movie_title': '스파이더맨: 노 웨이 홈',
             'rank': 9,
@@ -136,7 +139,7 @@ class ReviewAPITest(TestCase):
     # ========== 8. 미인증 → 401 ==========
     def test_review_create_unauthenticated(self):
         """인증 없이 리뷰 작성 → 401"""
-        response = self.client.post('/api/review/create/', {
+        response = self.client.post('/api/community/review/create/', {
             'title': '테스트', 'movie_title': '테스트', 'rank': 5, 'content': '테스트'
         })
         self.assertEqual(response.status_code, 401)
@@ -148,7 +151,7 @@ class ReviewAPITest(TestCase):
         refresh = RefreshToken.for_user(self.user1)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
 
-        response = self.client.post('/api/review/create/', {
+        response = self.client.post('/api/community/review/create/', {
             'movie_title': '테스트', 'rank': 5, 'content': '테스트'
         })
         self.assertEqual(response.status_code, 400)
@@ -160,7 +163,7 @@ class ReviewAPITest(TestCase):
         refresh = RefreshToken.for_user(self.user1)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
 
-        response = self.client.post('/api/review/create/', {
+        response = self.client.post('/api/community/review/create/', {
             'title': '테스트', 'movie_title': '테스트', 'rank': 5
         })
         self.assertEqual(response.status_code, 400)
@@ -173,7 +176,7 @@ class ReviewAPITest(TestCase):
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
 
         # review1은 user1이 작성함
-        response = self.client.patch(f'/api/review/{self.review1.id}/update/', {
+        response = self.client.patch(f'/api/community/review/{self.review1.id}/update/', {
             'title': '제목 수정됨',
             'rank': 10
         })
@@ -191,7 +194,7 @@ class ReviewAPITest(TestCase):
         refresh = RefreshToken.for_user(self.user2)  # user2가 user1의 글 수정 시도
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
 
-        response = self.client.patch(f'/api/review/{self.review1.id}/update/', {
+        response = self.client.patch(f'/api/community/review/{self.review1.id}/update/', {
             'title': '해킹 시도'
         })
         self.assertEqual(response.status_code, 403)
@@ -201,7 +204,7 @@ class ReviewAPITest(TestCase):
     # ========== 13. 미인증 수정 시도 → 401 ==========
     def test_review_update_unauthenticated(self):
         """미인증 상태로 수정 시도 → 401"""
-        response = self.client.patch(f'/api/review/{self.review1.id}/update/', {
+        response = self.client.patch(f'/api/community/review/{self.review1.id}/update/', {
             'title': '몰래 수정'
         })
         self.assertEqual(response.status_code, 401)
@@ -217,7 +220,7 @@ class ReviewAPITest(TestCase):
         review_id = self.review1.id
         title = self.review1.title
 
-        response = self.client.delete(f'/api/review/{review_id}/delete/')
+        response = self.client.delete(f'/api/community/review/{review_id}/delete/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['message'], f'작성하신 게시글 "{title}"이(가) 성공적으로 삭제 되었습니다.')
 
@@ -231,7 +234,7 @@ class ReviewAPITest(TestCase):
         refresh = RefreshToken.for_user(self.user2)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
 
-        response = self.client.delete(f'/api/review/{self.review1.id}/delete/')
+        response = self.client.delete(f'/api/community/review/{self.review1.id}/delete/')
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.data['error'], '본인의 게시글만 삭제할 수 있습니다.')
         print('✅ [PASS] 타인 글 삭제 시도 → 403')
@@ -239,7 +242,7 @@ class ReviewAPITest(TestCase):
     # ========== 16. 미인증 삭제 시도 → 401 ==========
     def test_review_delete_unauthenticated(self):
         """미인증 상태로 삭제 시도 → 401"""
-        response = self.client.delete(f'/api/review/{self.review1.id}/delete/')
+        response = self.client.delete(f'/api/community/review/{self.review1.id}/delete/')
         self.assertEqual(response.status_code, 401)
         print('✅ [PASS] 미인증 삭제 시도 → 401')
 
@@ -249,7 +252,7 @@ class ReviewAPITest(TestCase):
         refresh = RefreshToken.for_user(self.user2)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
 
-        response = self.client.post(f'/api/review/{self.review1.id}/comment/create/', {
+        response = self.client.post(f'/api/community/review/{self.review1.id}/comment/create/', {
             'content': '정말 공감 가는 리뷰에요',
             'review_id': self.review1.id  # Body에도 포함 (선택사항)
         })
@@ -259,6 +262,9 @@ class ReviewAPITest(TestCase):
         comment = response.data['comment']
         self.assertEqual(comment['content'], '정말 공감 가는 리뷰에요')
         self.assertEqual(comment['user']['username'], 'testuser2')
+        self.assertEqual(comment['user']['email'], 'test2@test.com')
+        self.assertEqual(comment['user']['first_name'], '철수')
+        self.assertEqual(comment['user']['last_name'], '김')
         self.assertIn('date_joined', comment['user'])  # 날짜 필드 존재 확인
         
         # DB 확인
@@ -271,7 +277,7 @@ class ReviewAPITest(TestCase):
         refresh = RefreshToken.for_user(self.user2)
         self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {refresh.access_token}')
 
-        response = self.client.post('/api/review/9999/comment/create/', {
+        response = self.client.post('/api/community/review/9999/comment/create/', {
             'content': '댓글'
         })
         self.assertEqual(response.status_code, 404)
@@ -280,7 +286,7 @@ class ReviewAPITest(TestCase):
     # ========== 19. 미인증 댓글 작성 → 401 ==========
     def test_comment_create_unauthenticated(self):
         """미인증 상태로 댓글 작성 시도 → 401"""
-        response = self.client.post(f'/api/review/{self.review1.id}/comment/create/', {
+        response = self.client.post(f'/api/community/review/{self.review1.id}/comment/create/', {
             'content': '댓글'
         })
         self.assertEqual(response.status_code, 401)
@@ -300,7 +306,7 @@ class ReviewAPITest(TestCase):
                 content=f'댓글 {i}'
             )
         
-        response = self.client.get(f'/api/review/{self.review1.id}/comment/list/?page=1')
+        response = self.client.get(f'/api/community/review/{self.review1.id}/comment/list/?page=1')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['count'], 17)  # setUp 2개 + 추가 15개 = 17개
         self.assertEqual(len(response.data['results']), 10)  # 페이지당 10개
@@ -310,7 +316,7 @@ class ReviewAPITest(TestCase):
     # ========== 21. 없는 리뷰 댓글 조회 → 404 ==========
     def test_comment_list_not_found(self):
         """없는 리뷰 ID 조회 시 404"""
-        response = self.client.get('/api/review/9999/comment/list/')
+        response = self.client.get('/api/community/review/9999/comment/list/')
         self.assertEqual(response.status_code, 404)
         print('✅ [PASS] 없는 리뷰 댓글 조회 → 404')
 
@@ -323,7 +329,7 @@ class ReviewAPITest(TestCase):
         # 댓글 생성 (user2가 작성)
         comment = ReviewComment.objects.create(user=self.user2, review=self.review1, content='원본 댓글')
 
-        response = self.client.put(f'/api/review/{self.review1.id}/comment/{comment.id}/update/', {
+        response = self.client.put(f'/api/community/review/{self.review1.id}/comment/{comment.id}/update/', {
             'content': '수정된 댓글'
         })
         self.assertEqual(response.status_code, 200)
@@ -340,7 +346,7 @@ class ReviewAPITest(TestCase):
         # 댓글 생성 (user2가 작성)
         comment = ReviewComment.objects.create(user=self.user2, review=self.review1, content='원본 댓글')
 
-        response = self.client.put(f'/api/review/{self.review1.id}/comment/{comment.id}/update/', {
+        response = self.client.put(f'/api/community/review/{self.review1.id}/comment/{comment.id}/update/', {
             'content': '해킹 시도'
         })
         self.assertEqual(response.status_code, 403)
@@ -356,7 +362,7 @@ class ReviewAPITest(TestCase):
         comment = ReviewComment.objects.create(user=self.user2, review=self.review1, content='원본 댓글')
         
         # 다른 리뷰 ID(999)로 요청
-        response = self.client.put(f'/api/review/999/comment/{comment.id}/update/', {
+        response = self.client.put(f'/api/community/review/999/comment/{comment.id}/update/', {
             'content': '수정'
         })
         # get_object_or_404를 먼저 호출하면 404일 수도 있으나, view 구현 순서에 따라 400 또는 404
@@ -373,7 +379,7 @@ class ReviewAPITest(TestCase):
 
         comment = ReviewComment.objects.create(user=self.user2, review=self.review1, content='삭제할 댓글')
 
-        response = self.client.delete(f'/api/review/{self.review1.id}/comment/{comment.id}/delete/')
+        response = self.client.delete(f'/api/community/review/{self.review1.id}/comment/{comment.id}/delete/')
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.data['message'], '댓글이 성공적으로 삭제되었습니다')
         
@@ -390,7 +396,7 @@ class ReviewAPITest(TestCase):
         # user2가 작성한 댓글
         comment = ReviewComment.objects.create(user=self.user2, review=self.review1, content='원본 댓글')
 
-        response = self.client.delete(f'/api/review/{self.review1.id}/comment/{comment.id}/delete/')
+        response = self.client.delete(f'/api/community/review/{self.review1.id}/comment/{comment.id}/delete/')
         self.assertEqual(response.status_code, 403)
         self.assertEqual(response.data['error'], '본인의 댓글만 삭제할 수 있습니다.')
         print('✅ [PASS] 타인 댓글 삭제 시도 → 403')
@@ -400,6 +406,6 @@ class ReviewAPITest(TestCase):
         """미인증 댓글 삭제 시도 → 401"""
         comment = ReviewComment.objects.create(user=self.user2, review=self.review1, content='댓글')
         
-        response = self.client.delete(f'/api/review/{self.review1.id}/comment/{comment.id}/delete/')
+        response = self.client.delete(f'/api/community/review/{self.review1.id}/comment/{comment.id}/delete/')
         self.assertEqual(response.status_code, 401)
         print('✅ [PASS] 미인증 댓글 삭제 시도 → 401')
