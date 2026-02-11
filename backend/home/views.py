@@ -1,4 +1,4 @@
-from rest_framework import views, status, serializers as drf_serializers
+from rest_framework import views, status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from django.db.models import Case, When
@@ -16,7 +16,6 @@ class MainView(views.APIView):
     고정 메인 10개 영화 API
     """
     permission_classes = [AllowAny]
-    # serializer_class를 명시적으로 지정하여 drf-spectacular의 자동 분석을 도움
     serializer_class = MainResponseSerializer
 
     @extend_schema(responses={200: MainResponseSerializer})
@@ -38,7 +37,7 @@ class MainView(views.APIView):
 
 class SubView(views.APIView):
     """
-    맞춤 카테고리 30개 API (3차원 오브젝트 리턴)
+    맞춤 카테고리 30개 API (리스트 내 객체 구조)
     """
     permission_classes = [AllowAny]
     serializer_class = SubResponseSerializer
@@ -67,8 +66,12 @@ class SubView(views.APIView):
         else:
             categories = categories.order_by('-base_score')[:30]
 
-        sub_data = {}
+        # 리스트 형식으로 데이터 구성
+        sub_list = []
         for cat in categories:
-            sub_data[cat.title] = HomeMovieSerializer(cat.movies.all(), many=True).data
+            sub_list.append({
+                "category_title": cat.title,
+                "movies": HomeMovieSerializer(cat.movies.all(), many=True).data
+            })
 
-        return Response({"sub": sub_data})
+        return Response({"sub": sub_list})
