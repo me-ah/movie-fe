@@ -60,7 +60,7 @@ export default function Home() {
 
 	return (
 		<div>
-			<main className="md:ml-20 pb-20 md:pb-0">
+			<main className="pb-20 md:pb-0">
 				<div className="relative h-[70vh] overflow-hidden">
 					{loading && (
 						<div className="absolute inset-0 bg-[#0A0B10]" aria-hidden />
