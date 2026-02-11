@@ -4,11 +4,12 @@ import json
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework import status
 from drf_spectacular.utils import extend_schema
 
-from .models import Movie
-from .serializers import MovieShortsSerializer
+from .models import Movie, Comment
+from .serializers import MovieShortsSerializer, CommentCreateSerializer, CommentResponseSerializer
 
 
 # ========== Shorts API View ==========
@@ -129,3 +130,80 @@ class MovieShortsDetailView(APIView):
             'next_cursor': next_cursor,
             'results': MovieShortsSerializer(next_list, many=True).data,
         })
+
+
+# ========== Shorts Comment View ==========
+class ShortsCommentView(APIView):
+    """
+    GET  /api/movies/shorts/{movie_id}/comments/ — 댓글 목록 조회 (로그인 불필요)
+    POST /api/movies/shorts/{movie_id}/comments/ — 댓글 작성 (로그인 필수)
+    """
+    serializer_class = CommentCreateSerializer
+
+    # ---- GET은 비로그인, POST는 로그인 필수 ----
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    # ---- 댓글 목록 조회 ----
+    def get(self, request, movie_id):
+        movie = get_object_or_404(Movie, movie_id=movie_id)
+        comments = Comment.objects.filter(movie=movie)
+        serializer = CommentResponseSerializer(comments, many=True)
+        return Response({
+            "movie_id": movie_id,
+            "comments": serializer.data
+        }, status=status.HTTP_200_OK)
+
+    # ---- 댓글 작성 ----
+    @extend_schema(request=CommentCreateSerializer, responses={201: CommentResponseSerializer})
+    def post(self, request, movie_id):
+        # ---- 댓글 내용 검증 ----
+        serializer = CommentCreateSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        # ---- 영화 조회 (없으면 404) ----
+        movie = get_object_or_404(Movie, movie_id=movie_id)
+
+        # ---- 댓글 생성 (user는 JWT에서 자동 추출, created_at은 auto_now_add) ----
+        comment = Comment.objects.create(
+            movie=movie,
+            user=request.user,
+            content=serializer.validated_data['content']
+        )
+
+        # ---- 응답 ----
+        response_data = CommentResponseSerializer(comment).data
+        response_data['message'] = '댓글이 성공적으로 등록되었습니다.'
+        return Response(response_data, status=status.HTTP_201_CREATED)
+
+
+# ========== Shorts Comment Delete View ==========
+class ShortsCommentDeleteView(APIView):
+    """
+    DELETE /api/movies/shorts/{movie_id}/comments/{comment_id}/
+    본인이 작성한 댓글만 삭제합니다.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def delete(self, request, movie_id, comment_id):
+        # ---- 댓글 조회 (없으면 404) ----
+        comment = get_object_or_404(Comment, id=comment_id, movie__movie_id=movie_id)
+
+        # ---- 본인 확인 (다른 사용자면 403) ----
+        if comment.user != request.user:
+            return Response(
+                {"error": "본인의 댓글만 삭제할 수 있습니다."},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # ---- 삭제 ----
+        comment.delete()
+        return Response({
+            "comment_id": comment_id,
+            "message": "댓글이 삭제되었습니다."
+        }, status=status.HTTP_200_OK)
+
+

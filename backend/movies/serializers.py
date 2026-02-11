@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Genre, Movie
+from .models import Genre, Movie, Comment
 
 
 # ========== Genre Serializer ==========
@@ -42,3 +42,20 @@ class MovieShortsSerializer(serializers.ModelSerializer):
         """
         # TODO: request.user가 인증된 경우 좋아요 여부 확인 로직 추가
         return False
+
+
+# ========== Comment Serializers ==========
+class CommentCreateSerializer(serializers.Serializer):
+    """댓글 작성 요청용"""
+    content = serializers.CharField(max_length=1000)
+
+
+class CommentResponseSerializer(serializers.ModelSerializer):
+    """댓글 응답용"""
+    comment_id = serializers.IntegerField(source='id')
+    user_name = serializers.CharField(source='user.username')
+
+    class Meta:
+        model = Comment
+        fields = ['comment_id', 'user_name', 'content', 'created_at']
+
