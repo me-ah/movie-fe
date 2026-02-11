@@ -38,7 +38,9 @@ export default function MovieReviewsTab({
           <div className="flex items-center justify-between">
             <div className="text-sm font-medium text-zinc-100">{r.author}</div>
             <div className="text-xs text-zinc-400">
-              {r.createdAt ? r.createdAt : ""}
+                {r.createdAt
+                  ? new Date(r.createdAt).toLocaleDateString("ko-KR")
+                  : ""}
             </div>
           </div>
 
