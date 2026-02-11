@@ -57,3 +57,8 @@ export async function logout() {
 	clearUser();
 	router.replace("/auth/");
 }
+
+export async function oauthcheck(access_token: string) {
+	const res = await api.post("/accounts/login/google/", { access_token });
+	return res.data;
+}
