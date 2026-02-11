@@ -1,4 +1,5 @@
 from django.db import models
+from django.conf import settings
 
 
 # ========== Genre 모델 ==========
@@ -27,8 +28,9 @@ class Movie(models.Model):
     genres = models.ManyToManyField(Genre, related_name='movies', blank=True)
 
     # ---- 평점 ----
-    vote_average = models.FloatField(default=0)   # 10점 만점
-    star_rating = models.FloatField(default=0)     # 5점 만점
+    vote_average = models.FloatField(default=0)   # TMDB 평점
+    star_rating = models.FloatField(default=0)     # 내부 별점
+    review_average = models.FloatField(default=0) # 사용자 리뷰 평균 평점 (추가)
 
     # ---- 부가 정보 ----
     ott_providers = models.JSONField(default=list, blank=True)
@@ -51,19 +53,13 @@ class Movie(models.Model):
         return f"[{self.movie_id}] {self.title}"
 
 
-# ========== Comment 모델 ==========
+# ========== Comment 모델 (쇼츠 댓글용) ==========
 class Comment(models.Model):
-    """영화 댓글 모델"""
+    """쇼츠용 댓글 모델"""
     movie = models.ForeignKey(Movie, on_delete=models.CASCADE, related_name='comments')
-    user = models.ForeignKey(
-        'accounts.User', on_delete=models.CASCADE, related_name='comments'
-    )
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        ordering = ['-created_at']
-
     def __str__(self):
         return f"{self.user.username}: {self.content[:20]}"
-

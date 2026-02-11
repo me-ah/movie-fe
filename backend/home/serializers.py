@@ -1,12 +1,12 @@
 from rest_framework import serializers
 from movies.models import Movie
-from home.models import HomeCategory
+from .models import HomeCategory, MovieReview
 from drf_spectacular.utils import extend_schema_serializer, OpenApiExample
 
-# Swagger 문서용 예시 데이터
+# --- 공통 및 예시 데이터 ---
 MOVIE_EXAMPLE = {
     "movie_id": 1,
-    "movie_title": "영화 제목",
+    "movie_title": "인터스텔라",
     "movie_poster": "https://example.com/poster.jpg",
     "movie_video": "https://youtube.com/embed/example"
 }
@@ -16,10 +16,45 @@ CATEGORY_EXAMPLE = {
     "movies": [MOVIE_EXAMPLE for _ in range(15)]
 }
 
+# --- 상세 페이지용 ---
+class MovieDetailRequestSerializer(serializers.Serializer):
+    id = serializers.IntegerField(help_text="조회할 영화의 PK")
+
+class MovieMiniSerializer(serializers.Serializer):
+    def to_representation(self, instance):
+        return {
+            "id": instance.id,
+            "poster": instance.poster_path,
+            "title": instance.title
+        }
+
+class ReviewSerializer(serializers.ModelSerializer):
+    author = serializers.ReadOnlyField(source='author.username')
+    createdAt = serializers.DateTimeField(source='created_at', format='%Y-%m-%dT%H:%M:%SZ')
+
+    class Meta:
+        model = MovieReview
+        fields = ['id', 'author', 'rating', 'content', 'createdAt']
+
+class ReviewCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MovieReview
+        fields = ['rating', 'content']
+
+class MovieDetailResponseSerializer(serializers.Serializer):
+    trailer = serializers.URLField()
+    title = serializers.CharField()
+    rank = serializers.CharField()
+    year = serializers.CharField()
+    poster = serializers.URLField()
+    runtime = serializers.CharField(allow_null=True)
+    ott_list = serializers.ListField(child=serializers.CharField())
+    MovieDetail = serializers.DictField()
+    ReviewItem = ReviewSerializer(many=True)
+    recommend_list = MovieMiniSerializer(many=True)
+
+# --- 홈 메인/서브용 ---
 class HomeMovieSerializer(serializers.Serializer):
-    """
-    영화 정보 객체 변환
-    """
     def to_representation(self, instance):
         return {
             "movie_id": instance.id,
@@ -42,10 +77,7 @@ class HomeMovieSerializer(serializers.Serializer):
 )
 class MainResponseSerializer(serializers.Serializer):
     user = serializers.DictField(help_text="인증된 유저 정보")
-    main = serializers.ListField(
-        child=serializers.DictField(),
-        help_text="고정 메인 영화 10개"
-    )
+    main = serializers.ListField(child=serializers.DictField(), help_text="메인 10개 영화")
 
 class CategoryResponseSerializer(serializers.Serializer):
     category_title = serializers.CharField()
@@ -65,5 +97,5 @@ class CategoryResponseSerializer(serializers.Serializer):
 class SubResponseSerializer(serializers.Serializer):
     sub = serializers.ListField(
         child=CategoryResponseSerializer(),
-        help_text="유저 취향 맞춤 카테고리 30개 리스트"
+        help_text="맞춤 카테고리 30개 리스트"
     )
