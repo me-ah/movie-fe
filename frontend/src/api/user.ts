@@ -41,11 +41,10 @@ export type GetMyPagePayload = {
 	userid: string | number;
 };
 
-
 export async function getMyPage(payload: GetMyPagePayload) {
 	const res = await api.post<BackendMyPageResponse>(
 		"/accounts/mypage/",
-		payload
+		payload,
 	);
 	return res.data;
 }

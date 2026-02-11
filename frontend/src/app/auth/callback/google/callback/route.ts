@@ -102,7 +102,6 @@ export async function GET(req: Request) {
 
 	// 2) Google 사용자 정보 조회 (선택)
 	// access_token이 있어야 호출 가능
-	let me: any = null;
 	if (googleAccessToken) {
 		const meRes = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
 			headers: { Authorization: `Bearer ${googleAccessToken}` },
@@ -113,7 +112,7 @@ export async function GET(req: Request) {
 			return NextResponse.redirect(`${appUrl}/auth?error=me_failed`);
 		}
 
-		me = await meRes.json();
+		await meRes.json();
 	}
 
 	// 3) 백엔드에 구글 토큰 전달 → 서비스 JWT 발급
@@ -125,13 +124,9 @@ export async function GET(req: Request) {
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
 			access_token: googleAccessToken,
-			googleId: me?.id,
-			email: me?.email,
-			nickname: me?.name,
-			picture: me?.picture,
+			// 또는 id_token: idToken (백엔드 스펙에 맞게)
 		}),
 	});
-
 	if (!backendRes.ok) {
 		console.error("Backend social error:", await backendRes.text());
 		return NextResponse.redirect(`${appUrl}/auth?error=backend_failed`);
@@ -140,7 +135,6 @@ export async function GET(req: Request) {
 	const data = await backendRes.json();
 	const accessToken = (data.token ?? data.access) as string | undefined;
 	const refreshToken = (data.refresh ?? data.refresh) as string | undefined;
-	const userId = data.user?.userid
 
 	if (!accessToken || !refreshToken) {
 		return NextResponse.redirect(`${appUrl}/auth?error=missing_app_tokens`);
@@ -149,7 +143,6 @@ export async function GET(req: Request) {
 	const redirect = new URL(`${appUrl}/auth/callback`);
 	redirect.searchParams.set("access", accessToken);
 	redirect.searchParams.set("refresh", refreshToken);
-	redirect.searchParams.set("userid", String(userId));
 
 	const res = NextResponse.redirect(redirect.toString());
 	res.cookies.set("oauth_state", "", { path: "/", maxAge: 0 });

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { type BackendMyPageResponse, getMyPage, patchMe } from "@/api/user";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,14 +12,12 @@ import {
 	DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { getUser } from "@/lib/userStorage";
 
 type Props = {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-
-	// ✅ 저장 성공 시 부모(MyPage)에게 최신 mypage 전체 넘겨주기
 	onSaved: (data: BackendMyPageResponse) => void;
-
 	onWithdraw?: () => void;
 };
 
@@ -37,6 +35,9 @@ export default function EditModal({
 	const [saveError, setSaveError] = useState<string | null>(null);
 	const [loading, setLoading] = useState(false);
 
+	// ✅ userId 안정적으로 확보 (getUser()가 string/number를 반환한다고 가정)
+	const userId = useMemo(() => getUser()?.user_id, []);
+
 	useEffect(() => {
 		if (!open) return;
 
@@ -47,7 +48,12 @@ export default function EditModal({
 				setLoading(true);
 				setSaveError(null);
 
-				const data = await getMyPage();
+				if (!userId) {
+					setSaveError("로그인 정보가 없습니다. 다시 로그인해주세요.");
+					return;
+				}
+
+				const data = await getMyPage({ userid: userId });
 				if (cancelled) return;
 
 				setEditFirstname(data.userdata?.firstname ?? "");
@@ -64,13 +70,17 @@ export default function EditModal({
 		return () => {
 			cancelled = true;
 		};
-	}, [open]);
+	}, [open, userId]);
 
 	const onCancel = () => onOpenChange(false);
 
 	const onSave = async () => {
 		if (!editFirstname.trim() || !editLastname.trim() || !editEmail.trim()) {
 			setSaveError("이름/성과 이메일은 필수입니다.");
+			return;
+		}
+		if (!userId) {
+			setSaveError("로그인 정보가 없습니다. 다시 로그인해주세요.");
 			return;
 		}
 
@@ -84,8 +94,8 @@ export default function EditModal({
 				useremail: editEmail.trim(),
 			});
 
-			// ✅ 저장 후 서버 기준 최신 mypage 전체 다시 조회
-			const data = await getMyPage();
+			// ✅ 저장 후 서버 기준 최신 mypage 전체 다시 조회 (payload 필수!)
+			const data = await getMyPage({ userid: userId });
 			onSaved(data);
 			onOpenChange(false);
 		} catch {

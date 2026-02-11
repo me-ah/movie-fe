@@ -7,9 +7,9 @@ import { useEffect, useMemo, useState } from "react";
 import { type BackendMyPageResponse, getMyPage } from "@/api/user";
 import EditModal from "@/app/auth/mypage/edit_modal";
 import { Button } from "@/components/ui/button";
+import { getUser } from "@/lib/userStorage";
 import MyListSection, { type PosterItem } from "./my_list_section";
 import StatCard from "./my_statcard";
-import { getUser } from "@/lib/userStorage";
 
 type MyPageUser = {
 	userid: string;

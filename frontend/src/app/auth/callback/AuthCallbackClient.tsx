@@ -19,8 +19,8 @@ export default function AuthCallbackClient() {
 			return;
 		}
 
-		console.log(userId)
-		console.log("12345678")
+		console.log(userId);
+		console.log("12345678");
 		setTokens(access, refresh);
 		setUser({ user_id: userId });
 

@@ -1,9 +1,7 @@
 // src/lib/userStorage.ts
 const USER_ID_KEY = "user_id";
 
-export function setUser(user: {
-	user_id: number | string;
-}) {
+export function setUser(user: { user_id: number | string }) {
 	if (typeof window === "undefined") return;
 
 	localStorage.setItem(USER_ID_KEY, String(user.user_id));

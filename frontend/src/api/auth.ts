@@ -17,7 +17,6 @@ export type LoginResponse = {
 	refresh: string;
 };
 
-
 export type SignupRequest = {
 	username: string;
 	email: string;
@@ -38,7 +37,7 @@ export async function login(username: string, password: string) {
 	setUser({
 		user_id: user.userid,
 	});
-	
+
 	setTokens(token, refresh);
 
 	return res.data;

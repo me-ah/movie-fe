@@ -7,7 +7,6 @@ import { useState } from "react";
 import { login } from "@/api/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { setTokens } from "@/lib/tokenStorage";
 
 export default function Login() {
 	const router = useRouter();
