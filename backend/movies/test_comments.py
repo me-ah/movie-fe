@@ -103,3 +103,87 @@ class ShortsCommentAPITest(TestCase):
             self.assertIn(field, response.data, f"'{field}' 필드가 응답에 없음")
         self.assertIsInstance(response.data['comment_id'], int)
         print(f'✅ [PASS] 응답 필드 확인: {required_fields}')
+
+    # ========== 6. 본인 댓글 삭제 → 200 ==========
+    def test_comment_delete_success(self):
+        """본인이 작성한 댓글 삭제 성공"""
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        # 먼저 댓글 생성
+        response = self.client.post(
+            '/api/movies/shorts/27205/comments/',
+            {'content': '삭제할 댓글'},
+            format='json'
+        )
+        comment_id = response.data['comment_id']
+
+        # 삭제 요청
+        response = self.client.delete(
+            f'/api/movies/shorts/27205/comments/{comment_id}/'
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.data['message'], '댓글이 삭제되었습니다.')
+        self.assertEqual(response.data['comment_id'], comment_id)
+
+        # DB에서도 삭제 확인
+        self.assertFalse(Comment.objects.filter(id=comment_id).exists())
+        print('✅ [PASS] 본인 댓글 삭제 → 200')
+
+    # ========== 7. 삭제 미인증 → 401 ==========
+    def test_comment_delete_unauthenticated(self):
+        """인증 없이 삭제 요청하면 401 반환"""
+        # 먼저 댓글 생성
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        response = self.client.post(
+            '/api/movies/shorts/27205/comments/',
+            {'content': '미인증 삭제 테스트'},
+            format='json'
+        )
+        comment_id = response.data['comment_id']
+
+        # 인증 제거 후 삭제 요청
+        self.client.credentials()
+        response = self.client.delete(
+            f'/api/movies/shorts/27205/comments/{comment_id}/'
+        )
+        self.assertEqual(response.status_code, 401)
+        print('✅ [PASS] 삭제 미인증 → 401')
+
+    # ========== 8. 다른 사용자 댓글 삭제 → 403 ==========
+    def test_comment_delete_forbidden(self):
+        """다른 사용자의 댓글 삭제 시도 → 403"""
+        # 원래 유저로 댓글 생성
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        response = self.client.post(
+            '/api/movies/shorts/27205/comments/',
+            {'content': '다른 유저가 삭제 시도할 댓글'},
+            format='json'
+        )
+        comment_id = response.data['comment_id']
+
+        # 다른 유저 생성 + 토큰 발급
+        other_user = User.objects.create_user(
+            username='otheruser',
+            email='other@test.com',
+            password='otherpass1234!'
+        )
+        other_refresh = RefreshToken.for_user(other_user)
+        other_token = str(other_refresh.access_token)
+
+        # 다른 유저로 삭제 시도
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {other_token}')
+        response = self.client.delete(
+            f'/api/movies/shorts/27205/comments/{comment_id}/'
+        )
+        self.assertEqual(response.status_code, 403)
+        print('✅ [PASS] 다른 사용자 댓글 삭제 → 403')
+
+    # ========== 9. 없는 comment_id → 404 ==========
+    def test_comment_delete_not_found(self):
+        """존재하지 않는 comment_id 삭제 → 404"""
+        self.client.credentials(HTTP_AUTHORIZATION=f'Bearer {self.token}')
+        response = self.client.delete(
+            '/api/movies/shorts/27205/comments/99999/'
+        )
+        self.assertEqual(response.status_code, 404)
+        print('✅ [PASS] 없는 comment_id 삭제 → 404')
+
