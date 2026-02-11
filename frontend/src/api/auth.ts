@@ -1,6 +1,6 @@
 // src/api/auth.ts
 
-import authClient from "@/lib/authClient";
+import api from "@/lib/authClient";
 import { setTokens } from "@/lib/tokenStorage";
 import { setUser } from "@/lib/userStorage";
 
@@ -15,6 +15,7 @@ export type LoginResponse = {
 	};
 	token: string;
 	refresh: string;
+	onboding: boolean;
 };
 
 export type SignupRequest = {
@@ -27,7 +28,7 @@ export type SignupRequest = {
 };
 
 export async function login(username: string, password: string) {
-	const res = await authClient.post<LoginResponse>("/accounts/login/", {
+	const res = await api.post<LoginResponse>("/accounts/login/", {
 		username,
 		password,
 	});
@@ -44,7 +45,6 @@ export async function login(username: string, password: string) {
 }
 
 export async function signup(payload: SignupRequest) {
-	const res = await authClient.post("/accounts/register/", payload);
-	console.log(res.data);
+	const res = await api.post("/accounts/register/", payload);
 	return res.data;
 }

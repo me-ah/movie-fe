@@ -26,9 +26,16 @@ export default function Login() {
 			setLoading(true);
 			setError(null);
 
-			await login(username, password);
+			const user_data = await login(username, password);
+			console.log(user_data)
+			const isOnboding = user_data.onboding
 
-			router.push("/");
+			if (isOnboding) {
+				router.push("/");
+			}else{
+				router.push("/auth/onboarding");
+			}
+
 		} catch (err: unknown) {
 			console.error("Login failed:", err);
 			setError("로그인에 실패했습니다. 정보를 확인해주세요.");
@@ -79,12 +86,6 @@ export default function Login() {
 						{loading ? "로그인 중..." : "로그인"}
 					</Button>
 				</div>
-				{/* 
-				<div className="my-6 flex items-center gap-4">
-					<div className="h-px flex-1 bg-zinc-700/70" />
-					<span className="text-xs text-zinc-400">다른 계정으로 로그인</span>
-					<div className="h-px flex-1 bg-zinc-700/70" />
-				</div> */}
 
 				<div className="mt-6 text-center text-sm text-zinc-400">
 					계정이 없으신가요? 바로 가입하세요!{" "}
