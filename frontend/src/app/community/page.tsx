@@ -1,79 +1,119 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import PostCard from "@/app/community/PostCard";
-import SortTabs, { SortKey } from "@/app/community/SortTabs";
+import SortTabs, { type SortKey } from "@/app/community/SortTabs";
 import type { CommunityPost } from "@/app/community/types";
 import { Button } from "@/components/ui/button";
 import CreateReviewDialog from "./CreateReviewDialog";
 
-const MOCK: CommunityPost[] = [
-  {
-    id: "1",
-    author: { name: "Alex Johnson", handle: "@alexj_movies", avatarUrl: null },
-    movie: { title: "Neon Dreams", posterUrl: null },
-    rating: 5,
-    content:
-      "Absolutely mind-blowing! The cinematography is stunning and the story keeps you on the edge of your seat.",
-    createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-    likeCount: 234,
-    commentCount: 45,
-  },
-];
+import { getReviewListNormalized, type ReviewDetail } from "@/api/reviews";
+
+function toCommunityPost(r: ReviewDetail): CommunityPost {
+	const fullName = `${r.user?.firstname ?? ""} ${r.user?.lastname ?? ""}`.trim();
+	const displayName = fullName || r.user?.username || "Unknown";
+
+	return {
+		id: String(r.id),
+		author: {
+			id: r.user?.id ?? r.user?.username ?? "unknown",
+			name: displayName,
+			handle: r.user?.username ? `@${r.user.username}` : "@unknown",
+			avatarUrl: null, // 백엔드에 avatar 없으면 null
+		},
+		movie: {
+			title: r.movie_title ?? "Unknown",
+			posterUrl: null, // 백엔드에 poster 없으면 null
+		},
+		rating: r.rank ?? 0, // 너 백엔드는 rank 사용
+		content: r.content ?? "",
+		createdAt: r.created_at,
+		likeCount: 0, // 목록 응답에 없어서 0 처리
+		commentCount: Array.isArray(r.comments) ? r.comments.length : 0,
+	};
+}
 
 export default function CommunityPage() {
-  const [sort, setSort] = useState<SortKey>("latest");
-  const [createOpen, setCreateOpen] = useState(false);
+	const [sort, setSort] = useState<SortKey>("created_at");
+	const [createOpen, setCreateOpen] = useState(false);
 
-  const posts = useMemo(() => {
-    const copy = [...MOCK];
-    if (sort === "popular") {
-      copy.sort((a, b) => (b.likeCount + b.commentCount) - (a.likeCount + a.commentCount));
-    } else {
-      copy.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
-    }
-    return copy;
-  }, [sort]);
+	const [items, setItems] = useState<ReviewDetail[]>([]);
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState<string | null>(null);
 
-  return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      <main className="mx-auto max-w-5xl px-6 pb-20 pt-14">
-        {/* 헤더 */}
-        <header className="text-center">
-          <h1 className="text-5xl font-semibold tracking-tight">자유게시판</h1>
-          <p className="mt-4 text-zinc-400">
-            me:ahflix 에서 후기를 확인해보세요
-          </p>
-        </header>
+	const fetchPosts = async () => {
+		setLoading(true);
+		setError(null);
 
-        {/* 탭 */}
-        <div className="mt-8 flex items-center justify-between">
-          <SortTabs value={sort} onChange={setSort} />
+		try {
+			const order: "asc" | "desc" = sort === "created_at" ? "desc" : "asc";
 
-          <Button
-            onClick={() => setCreateOpen(true)}
-            className="bg-blue-500 hover:bg-blue-600"
-          >
-            게시글 생성
-          </Button>
-        </div>
+			const data = await getReviewListNormalized({ order, page: 1 });
+			setItems(data.results);
+		} catch (e: any) {
+			setError(e?.message ?? "리뷰 목록 조회 실패");
+		} finally {
+			setLoading(false);
+		}
+	};
 
-        {/* 리스트 */}
-        <section className="mt-10 space-y-6">
-          {posts.map((p) => (
-            <PostCard key={p.id} post={p} />
-          ))}
-        </section>
+	useEffect(() => {
+		fetchPosts();
 
-         <CreateReviewDialog
-          open={createOpen}
-          onOpenChange={setCreateOpen}
-          onCreated={() => {
-            // TODO: 리뷰 목록 API 붙이면 여기서 재조회하면 됨
-            // fetchPosts();
-          }}
-        />
-      </main>
-    </div>
-  );
+	}, [sort]);
+
+	const posts: CommunityPost[] = useMemo(() => {
+
+		const mapped = items.map(toCommunityPost);
+
+		if (sort === "rating") {
+			const copy = [...mapped];
+			copy.sort(
+				(a, b) => b.likeCount + b.commentCount - (a.likeCount + a.commentCount),
+			);
+			return copy;
+		}
+
+		return mapped.sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt));
+	}, [items, sort]);
+
+	return (
+		<div className="min-h-screen bg-zinc-950 text-zinc-100">
+			<main className="mx-auto max-w-5xl px-6 pb-20 pt-14">
+				<header className="text-center">
+					<h1 className="text-5xl font-semibold tracking-tight">자유게시판</h1>
+					<p className="mt-4 text-zinc-400">me:ahflix 에서 후기를 확인해보세요</p>
+				</header>
+
+				<div className="mt-8 flex items-center justify-between">
+					<SortTabs value={sort} onChange={setSort} />
+
+					<Button
+						onClick={() => setCreateOpen(true)}
+						className="bg-blue-500 hover:bg-blue-600"
+					>
+						게시글 생성
+					</Button>
+				</div>
+
+				<section className="mt-10 space-y-6">
+					{loading && <div className="text-zinc-400">불러오는 중...</div>}
+
+					{!loading && !error && posts.map((p) => <PostCard key={p.id} post={p} />)}
+
+					{!loading && !error && posts.length === 0 && (
+						<div className="text-zinc-400">아직 게시글이 없습니다.</div>
+					)}
+				</section>
+
+				<CreateReviewDialog
+					open={createOpen}
+					onOpenChange={setCreateOpen}
+					onCreated={() => {
+						fetchPosts(); 
+					}}
+				/>
+			</main>
+		</div>
+	);
 }
