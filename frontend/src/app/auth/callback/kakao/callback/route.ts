@@ -74,7 +74,8 @@ export async function GET(req: Request) {
 	});
 
 	if (!tokenRes.ok) {
-		console.error("Kakao token error:", await tokenRes.text());
+		const text = await tokenRes.text();
+		console.error("Kakao token error:", tokenRes.status, text);
 		return NextResponse.redirect(`${appUrl}/auth?error=token_failed`);
 	}
 
@@ -96,25 +97,25 @@ export async function GET(req: Request) {
 	const me = await meRes.json();
 
 	// 3) 백엔드에 카카오 토큰 전달 → 서비스 JWT 발급
-	const backendRes = await fetch(`${backendBase}/auth/social/kakao`, {
+	const backendRes = await fetch(`${backendBase}/accounts/login/kakao/`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify({
-			kakaoAccessToken,
+			access_token: kakaoAccessToken,
 			kakaoId: me?.id,
 			email: me?.kakao_account?.email,
 			nickname: me?.kakao_account?.profile?.nickname,
 		}),
 	});
-
+	console.log(backendRes);
 	if (!backendRes.ok) {
 		console.error("Backend social error:", await backendRes.text());
 		return NextResponse.redirect(`${appUrl}/auth?error=backend_failed`);
 	}
 
 	const data = await backendRes.json();
-	const accessToken = data.accessToken as string | undefined;
-	const refreshToken = data.refreshToken as string | undefined;
+	const accessToken = data.token as string | undefined;
+	const refreshToken = data.refresh as string | undefined;
 
 	if (!accessToken || !refreshToken) {
 		return NextResponse.redirect(`${appUrl}/auth?error=missing_app_tokens`);
