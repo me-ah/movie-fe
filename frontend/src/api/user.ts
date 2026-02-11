@@ -55,5 +55,5 @@ export async function patchMe(payload: UpdateMePayload) {
 }
 
 export async function withdrawMe() {
-	return api.delete("/accounts/profile/delete");
+	return api.delete("/accounts/profile/delete/");
 }
