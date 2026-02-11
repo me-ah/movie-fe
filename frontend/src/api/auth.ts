@@ -1,15 +1,16 @@
 // src/api/auth.ts
-import { setUser } from "@/lib/userStorage";
+
 import authClient from "@/lib/authClient";
+import { setUser } from "@/lib/userStorage";
 
 type LoginResponse = {
-  accessToken: string;
-  refreshToken: string;
-  user: {
-    id: number;
-    username: string;
-    email: string;
-  };
+	accessToken: string;
+	refreshToken: string;
+	user: {
+		id: number;
+		username: string;
+		email: string;
+	};
 };
 
 export type SignupRequest = {
@@ -28,18 +29,17 @@ export async function login(username: string, password: string) {
 	});
 	const { user } = res.data;
 
-	
-  setUser({
-    user_id: user.id,  
-    username: user.username,
-    email: user.email,
-  });
+	setUser({
+		user_id: user.id,
+		username: user.username,
+		email: user.email,
+	});
 
 	return res.data;
 }
 
 export async function signup(payload: SignupRequest) {
 	const res = await authClient.post("/accounts/register/", payload);
-	console.log(res.data)
+	console.log(res.data);
 	return res.data;
 }

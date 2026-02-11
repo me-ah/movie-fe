@@ -74,11 +74,10 @@ export async function GET(req: Request) {
 	});
 
 	if (!tokenRes.ok) {
-	const text = await tokenRes.text();
-	console.error("Kakao token error:", tokenRes.status, text);
-	return NextResponse.redirect(`${appUrl}/auth?error=token_failed`);
+		const text = await tokenRes.text();
+		console.error("Kakao token error:", tokenRes.status, text);
+		return NextResponse.redirect(`${appUrl}/auth?error=token_failed`);
 	}
-
 
 	const tokenJson = await tokenRes.json();
 	const kakaoAccessToken = tokenJson.access_token as string | undefined;
@@ -108,7 +107,7 @@ export async function GET(req: Request) {
 			nickname: me?.kakao_account?.profile?.nickname,
 		}),
 	});
-	console.log(backendRes)
+	console.log(backendRes);
 	if (!backendRes.ok) {
 		console.error("Backend social error:", await backendRes.text());
 		return NextResponse.redirect(`${appUrl}/auth?error=backend_failed`);

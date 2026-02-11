@@ -11,15 +11,15 @@ import MyListSection, { type PosterItem } from "./my_list_section";
 import StatCard from "./my_statcard";
 
 type MyPageUser = {
-  userid: string;
-  username: string;
-  useremail: string;
-  firstname: string;
-  lastname: string;
-  stats: {
-    watchtime: number;
-    usermylist: number;
-  };
+	userid: string;
+	username: string;
+	useremail: string;
+	firstname: string;
+	lastname: string;
+	stats: {
+		watchtime: number;
+		usermylist: number;
+	};
 };
 
 function toNumber(v: unknown, fallback = 0) {
@@ -52,17 +52,17 @@ function mapMyListMovie(
 function normalize(data: BackendMyPageResponse) {
 	const u = data.userdata;
 
-  const user: MyPageUser = {
-    userid: String(u.userid ?? ""),
-    username: u.username ?? "Unknown",
-    useremail: u.useremail ?? "",
-    firstname: u.firstname ?? "",
-    lastname: u.lastname ?? "",
-    stats: {
-      watchtime: toNumber(data.watchtime, 0),
-      usermylist: toNumber(data.usermylist, 0)
-    },
-  };
+	const user: MyPageUser = {
+		userid: String(u.userid ?? ""),
+		username: u.username ?? "Unknown",
+		useremail: u.useremail ?? "",
+		firstname: u.firstname ?? "",
+		lastname: u.lastname ?? "",
+		stats: {
+			watchtime: toNumber(data.watchtime, 0),
+			usermylist: toNumber(data.usermylist, 0),
+		},
+	};
 
 	return {
 		user,
@@ -80,10 +80,10 @@ export default function MyPage() {
 	useEffect(() => {
 		let cancelled = false;
 
-    const load = async () => {
-      try {
-        const data = await getMyPage(); 
-        if (cancelled) return;
+		const load = async () => {
+			try {
+				const data = await getMyPage();
+				if (cancelled) return;
 
 				const norm = normalize(data);
 				setUser(norm.user);
@@ -104,18 +104,18 @@ export default function MyPage() {
 		};
 	}, []);
 
-  const userView = useMemo<MyPageUser>(
-    () =>
-      user ?? {
-        userid: "",
-        username: "Loading...",
-        useremail: "",
-        firstname: "",
-        lastname: "",
-        stats: { watchtime: 0, usermylist: 0 },
-      },
-    [user]
-  );
+	const userView = useMemo<MyPageUser>(
+		() =>
+			user ?? {
+				userid: "",
+				username: "Loading...",
+				useremail: "",
+				firstname: "",
+				lastname: "",
+				stats: { watchtime: 0, usermylist: 0 },
+			},
+		[user],
+	);
 
 	const displayName = useMemo(() => {
 		const full = `${userView.firstname} ${userView.lastname}`.trim();
@@ -184,9 +184,17 @@ export default function MyPage() {
 					/>
 				</section>
 
-        <MyListSection title="시청기록" items={recordItems} emptyText="시청기록이 없습니다." />
-        <MyListSection title="찜한 리스트" items={myListItems} emptyText="찜한 콘텐츠가 없습니다." />
-      </main>
+				<MyListSection
+					title="시청기록"
+					items={recordItems}
+					emptyText="시청기록이 없습니다."
+				/>
+				<MyListSection
+					title="찜한 리스트"
+					items={myListItems}
+					emptyText="찜한 콘텐츠가 없습니다."
+				/>
+			</main>
 
 			{/* EditModal 저장 성공 시: 다시 getMyPage()로 전체 리프레시 권장 */}
 			<EditModal

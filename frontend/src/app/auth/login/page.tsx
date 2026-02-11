@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -7,7 +8,6 @@ import { login } from "@/api/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { setTokens } from "@/lib/tokenStorage";
-import { ArrowLeft } from "lucide-react";
 
 export default function Login() {
 	const router = useRouter();
@@ -49,7 +49,7 @@ export default function Login() {
 				>
 					<ArrowLeft className="!w-8 !h-8" />
 				</Button>
-				
+
 				<h1 className="text-center text-2xl font-semibold mb-8">미아릭스</h1>
 
 				<div className="space-y-4">
