@@ -45,7 +45,7 @@ export async function getMe() {
 
 // 마이페이지 조회 (보통 GET)
 export async function getMyPage() {
-	const res = await api.get<BackendMyPageResponse>("/accounts/mypage/");
+	const res = await api.post<BackendMyPageResponse>("/accounts/mypage/");
 	return res.data;
 }
 
