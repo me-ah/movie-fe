@@ -144,7 +144,7 @@ export default function OnBoarding() {
 		<div className="flex min-h-screen items-center justify-center">
 			<div className="w-full max-w-3xl p-6">
 				<div className="mb-6 text-center">
-					<h1 className="text-2xl font-bold text-zinc-100">온보딩</h1>
+					<h1 className="text-2xl font-bold text-zinc-100">카테고리 선택</h1>
 					<p className="mt-1 text-sm text-zinc-400">
 						좋아하는 장르를 선택하면 추천이 더 정확해져요.
 					</p>
