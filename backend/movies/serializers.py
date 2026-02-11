@@ -35,13 +35,23 @@ class MovieShortsSerializer(serializers.ModelSerializer):
             'is_liked',
         ]
 
-    def get_is_liked(self, obj):
+    def get_is_liked(self, obj) -> bool:
         """로그인 유저: 좋아요 여부 조회 / 비로그인: False"""
         request = self.context.get('request')
         if request and request.user.is_authenticated:
             from accounts.models import UserLikeList
             return UserLikeList.objects.filter(user=request.user, movie=obj).exists()
         return False
+
+# 스웨거 문서용 래퍼
+class ShortsResponseSerializer(serializers.Serializer):
+    next_cursor = serializers.IntegerField(help_text="다음 페이지 조회를 위한 인덱스 커서 (로그인 유저는 0, 10, 20... 형식)")
+    results = MovieShortsSerializer(many=True)
+
+class ShortsDetailResponseSerializer(serializers.Serializer):
+    current = MovieShortsSerializer()
+    next_cursor = serializers.IntegerField()
+    results = MovieShortsSerializer(many=True)
 
 
 # ========== Comment Serializers ==========
@@ -58,4 +68,3 @@ class CommentResponseSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = ['comment_id', 'user_name', 'content', 'created_at']
-
