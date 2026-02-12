@@ -184,3 +184,7 @@ export async function getAdminUserDetail(id: number) {
 	const res = await api.get<AdminUserDetail>(`/admin/accounts/${id}/`);
 	return res.data;
 }
+
+export async function deleteAdminUser(id: number) {
+	await api.delete(`/admin/accounts/${id}/`);
+}

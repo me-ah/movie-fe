@@ -2,9 +2,25 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { type AdminUserDetail, getAdminUserDetail } from "@/api/admin";
+import {
+	type AdminUserDetail,
+	deleteAdminUser,
+	getAdminUserDetail,
+} from "@/api/admin";
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogCancel,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+	AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 function DetailRow({
 	label,
@@ -38,6 +54,7 @@ function BoolBadge({ value }: { value: boolean }) {
 export default function UserDetailPage() {
 	const router = useRouter();
 	const params = useParams();
+	const { toast } = useToast();
 	const idStr = String(params?.id || "");
 	const id = parseInt(idStr, 10);
 
@@ -67,6 +84,23 @@ export default function UserDetailPage() {
 		};
 	}, [id]);
 
+	const handleDelete = async () => {
+		try {
+			await deleteAdminUser(id);
+			toast({
+				title: "삭제 성공",
+				description: "회원이 성공적으로 삭제되었습니다.",
+			});
+			router.replace("/admin");
+		} catch {
+			toast({
+				variant: "destructive",
+				title: "삭제 실패",
+				description: "회원 삭제 중 오류가 발생했습니다.",
+			});
+		}
+	};
+
 	if (!id) return <div className="p-10 text-zinc-400">잘못된 접근입니다.</div>;
 	if (loading && !user)
 		return <div className="p-10 text-zinc-400">로딩 중...</div>;
@@ -89,13 +123,46 @@ export default function UserDetailPage() {
 							ID: {user.id} / {user.username}
 						</p>
 					</div>
-					<Button
-						variant="outline"
-						onClick={() => router.back()}
-						className="border-zinc-700 hover:bg-zinc-800 text-zinc-300"
-					>
-						목록으로
-					</Button>
+					<div className="flex gap-2">
+						<AlertDialog>
+							<AlertDialogTrigger asChild>
+								<Button
+									variant="destructive"
+									className="bg-rose-600 hover:bg-rose-700 text-white"
+								>
+									회원 삭제
+								</Button>
+							</AlertDialogTrigger>
+							<AlertDialogContent className="bg-zinc-900 border-zinc-800 text-zinc-100">
+								<AlertDialogHeader>
+									<AlertDialogTitle>정말 삭제하시겠습니까?</AlertDialogTitle>
+									<AlertDialogDescription className="text-zinc-400">
+										이 작업은 되돌릴 수 없습니다. 해당 회원의 모든 정보가
+										영구적으로 삭제됩니다.
+									</AlertDialogDescription>
+								</AlertDialogHeader>
+								<AlertDialogFooter>
+									<AlertDialogCancel className="bg-transparent border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-zinc-100">
+										취소
+									</AlertDialogCancel>
+									<AlertDialogAction
+										onClick={handleDelete}
+										className="bg-rose-600 hover:bg-rose-700 text-white border-none"
+									>
+										삭제 확인
+									</AlertDialogAction>
+								</AlertDialogFooter>
+							</AlertDialogContent>
+						</AlertDialog>
+
+						<Button
+							variant="outline"
+							onClick={() => router.back()}
+							className="border-zinc-700 hover:bg-zinc-800 text-zinc-300"
+						>
+							목록으로
+						</Button>
+					</div>
 				</header>
 
 				<div className="grid gap-6">
