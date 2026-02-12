@@ -83,6 +83,7 @@ class UserDataSerializer(serializers.Serializer):
     firstname = serializers.CharField(source='first_name')
     lastname = serializers.CharField(source='last_name')
     onboarding = serializers.BooleanField(source='is_onboarding_completed')
+    login_type = serializers.CharField() # 이 필드를 추가합니다.
 
 class LoginResponseSerializer(serializers.Serializer):
     message = serializers.CharField()

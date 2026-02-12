@@ -114,7 +114,15 @@ class MyPageView(views.APIView):
         except (ValueError, TypeError):
              return Response({"error": "INVALID_PARAMETER", "message": "userid는 숫자 형식이어야 합니둥"}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            userdata = {"userid": str(user.id), "username": user.username, "useremail": user.email, "firstname": user.first_name, "lastname": user.last_name}
+            userdata = {
+                "userid": str(user.id), 
+                "username": user.username, 
+                "useremail": user.email, 
+                "firstname": user.first_name, 
+                "lastname": user.last_name,
+                "login_type": user.login_type, # 추가
+                "onboarding": user.is_onboarding_completed # 온보딩 상태도 마이페이지에 포함
+            }
             watchtime_sum = UserMovieHistory.objects.filter(user=user).aggregate(Sum('watch_time'))['watch_time__sum'] or 0
             usermylist_count = UserMyList.objects.filter(user=user).count()
             record_movies_qs = UserMovieHistory.objects.filter(user=user).select_related('movie').order_by('-watched_at')[:10]
