@@ -17,7 +17,7 @@ import { Separator } from "@/components/ui/separator";
 type CommentsDialogProps = {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	postId: string;
+	postId: number;
 };
 
 type CommentUser = {

@@ -34,7 +34,7 @@ export type ReviewDetail = {
 export type UpdateReviewPayload = Partial<{
 	title: string;
 	movie_title: string;
-	rating: number;
+	rank: number;
 	content: string;
 }>;
 
@@ -86,12 +86,12 @@ export async function updateReview(
 	reviewId: number | string,
 	payload: UpdateReviewPayload,
 ) {
-	const res = await api.put(`/review/${reviewId}/`, payload);
+	const res = await api.patch(`/community/review/${reviewId}/update/`, payload);
 	return res.data;
 }
 
 export async function deleteReview(reviewId: number | string) {
-	await api.delete(`/review/${reviewId}/`);
+	await api.delete(`/community/review/${reviewId}/delete/`);
 }
 
 export type ReviewListSortType =
@@ -122,8 +122,11 @@ export type ReviewListParams = Partial<{
 	search: string; // 영화 제목 검색
 }>;
 
-// ✅ /api/community/review/list/ (Swagger에 있는 그 엔드포인트)
+
 export async function getCommunityReviewList(params: ReviewListParams = {}) {
 	const res = await api.get("/community/review/list/", { params });
+	console.log(res.data)
 	return res.data;
 }
+
+
