@@ -54,20 +54,24 @@ class ChangePasswordView(views.APIView):
             return Response({'status': 'success', 'message': 'Password updated successfully'}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# ========== User Profile Views (복구 완료) ==========
+# ========== User Profile Views (수정 및 복구) ==========
 
-class UserProfileUpdateView(views.APIView):
+class UserProfileUpdateView(generics.UpdateAPIView):
     """유저 프로필 수정 (email, first_name, last_name) - PATCH만 지원"""
     permission_classes = (IsAuthenticated,)
     serializer_class = UserProfileUpdateSerializer
+    http_method_names = ['patch', 'options']
+
+    def get_object(self):
+        return self.request.user
 
     @extend_schema(request=UserProfileUpdateSerializer, responses={200: UserProfileUpdateSerializer})
     def patch(self, request, *args, **kwargs):
-        serializer = UserProfileUpdateSerializer(request.user, data=request.data, partial=True)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        print(f"DEBUG: Updating Profile for {request.user.username}")
+        print(f"DEBUG: Request Data: {request.data}")
+        response = super().partial_update(request, *args, **kwargs)
+        print(f"DEBUG: Updated User First Name: {request.user.first_name}")
+        return response
 
 class UserProfileDeleteView(views.APIView):
     """유저 회원 탈퇴"""
@@ -75,8 +79,16 @@ class UserProfileDeleteView(views.APIView):
 
     def delete(self, request):
         user = request.user
-        user.delete()
-        return Response({"message": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        try:
+            # 관련된 다른 앱 데이터와의 충돌을 방지하기 위해 명시적 삭제 수행 가능
+            # 현재는 CASCADE 설정에 따라 user.delete()가 정상 작동해야 함
+            user.delete()
+            return Response({"message": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        except Exception as e:
+            return Response({
+                "error": "DELETE_FAILED",
+                "message": f"회원 탈퇴 중 오류가 발생했습니둥: {str(e)}"
+            }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # ====================================================
 
