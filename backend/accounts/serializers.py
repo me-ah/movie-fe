@@ -146,6 +146,7 @@ class MovieMiniSerializer(serializers.Serializer):
 
 class MyPageResponseSerializer(serializers.Serializer):
     userdata = UserDataSerializer()
+    login_type = serializers.CharField()
     watchtime = serializers.IntegerField()
     usermylist = serializers.IntegerField()
     recordmovie = serializers.DictField(child=serializers.DictField())
