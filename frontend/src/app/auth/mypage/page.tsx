@@ -72,7 +72,7 @@ function normalize(data: BackendMyPageResponse) {
 		useremail: u.useremail ?? "",
 		firstname: u.firstname ?? "",
 		lastname: u.lastname ?? "",
-		login_type: data.login_type ?? "email", // ✅ 여기!
+		login_type: data.login_type ?? "", 
 		stats: {
 			watchtime: toNumber(data.watchtime, 0),
 			usermylist: toNumber(data.usermylist, 0),
@@ -97,7 +97,7 @@ export default function MyPage() {
 	const handleLogout = () => {
 		clearTokens();
 		clearUser();
-		router.replace("/auth"); // 로그인 페이지로
+		router.replace("/auth"); 
 	};
 	
 	useEffect(() => {
@@ -140,8 +140,9 @@ export default function MyPage() {
 				stats: { watchtime: 0, usermylist: 0 },
 			},
 		[user],
-	);
+	);	
 
+	
 	const displayName = useMemo(() => {
 		const full = `${userView.firstname}${userView.lastname}`.trim();
 		return full || userView.username || "Unknown";
