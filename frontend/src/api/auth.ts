@@ -1,5 +1,5 @@
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import api from "@/lib/authClient";
+import api from "@/lib/apiClient";
 import { clearTokens, setTokens } from "@/lib/tokenStorage";
 import { clearUser, setUser } from "@/lib/userStorage";
 
@@ -55,5 +55,16 @@ export function logout(router: AppRouterInstance) {
 }
 export async function oauthcheck(access_token: string) {
 	const res = await api.post("/accounts/login/google/", { access_token });
+	return res.data;
+}
+
+export type ChangePasswordPayload = {
+	old_password: string;
+	new_password: string;
+	new_password_confirm: string;
+};
+
+export async function changePassword(payload: ChangePasswordPayload) {
+	const res = await api.post("/accounts/change_password/", payload);
 	return res.data;
 }

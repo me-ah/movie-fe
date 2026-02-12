@@ -6,6 +6,7 @@ import {
 	getReviewComments,
 	type ReviewComment,
 } from "@/api/reviews";
+import CommentsList from "@/app/community/CommentsList"; // ✅ 추가
 import { Button } from "@/components/ui/button";
 import {
 	Dialog,
@@ -16,7 +17,6 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
-import CommentsList from "@/app/community/CommentsList"; // ✅ 추가
 
 type CommentsDialogProps = {
 	open: boolean;
@@ -96,9 +96,9 @@ export default function CommentsDialog({
 						</div>
 					) : (
 						<CommentsList
-						reviewId={postId}          
-						comments={comments}
-						onChanged={fetchComments}
+							reviewId={postId}
+							comments={comments}
+							onChanged={fetchComments}
 						/>
 					)}
 

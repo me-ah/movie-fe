@@ -1,6 +1,6 @@
 "use client";
 
-import { Clock, Heart, LogOut, Settings } from "lucide-react";
+import { Clock, Heart, KeyRound, LogOut, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -10,6 +10,7 @@ import EditModal from "@/app/auth/mypage/edit_modal";
 import { Button } from "@/components/ui/button";
 import { clearTokens } from "@/lib/tokenStorage";
 import { clearUser, getUser } from "@/lib/userStorage";
+import ChangePasswordDialog from "./ChangePasswordDialog";
 import MyListSection, { type PosterItem } from "./my_list_section";
 import StatCard from "./my_statcard";
 
@@ -80,7 +81,7 @@ export default function MyPage() {
 	const [myListItems, setMyListItems] = useState<PosterItem[]>([]);
 	const [settingsOpen, setSettingsOpen] = useState(false);
 	const router = useRouter();
-
+	const [pwOpen, setPwOpen] = useState(false);
 	const handleLogout = () => {
 		clearTokens();
 		clearUser();
@@ -172,6 +173,16 @@ export default function MyPage() {
 								<Settings className="mr-2 h-4 w-4" />
 								Settings
 							</Button>
+
+							<Button
+								type="button"
+								variant="secondary"
+								onClick={() => setPwOpen(true)}
+								className="h-11 rounded-xl bg-zinc-800/70 text-zinc-100 hover:bg-zinc-800 border border-zinc-700"
+							>
+								<KeyRound className="mr-2 h-4 w-4" />
+								비밀번호 변경
+							</Button>
 							<Button
 								type="button"
 								variant="secondary"
@@ -226,6 +237,7 @@ export default function MyPage() {
 				}}
 				onWithdraw={() => setSettingsOpen(false)}
 			/>
+			<ChangePasswordDialog open={pwOpen} onOpenChange={setPwOpen} />
 		</div>
 	);
 }

@@ -197,23 +197,23 @@ export async function toggleReviewLike(reviewId: number | string) {
 	return res.data;
 }
 
-
 export async function updateReviewComment(
-  reviewId: number | string,
-  commentId: number | string,
-  content: string,
+	reviewId: number | string,
+	commentId: number | string,
+	content: string,
 ) {
-  const res = await api.put(
-    `/community/review/${reviewId}/comment/${commentId}/update/`,
-    { content },
-  );
-  return res.data;
+	const res = await api.put(
+		`/community/review/${reviewId}/comment/${commentId}/update/`,
+		{ content },
+	);
+	return res.data;
 }
 
-
 export async function deleteReviewComment(
-  reviewId: number | string,
-  commentId: number | string,
+	reviewId: number | string,
+	commentId: number | string,
 ) {
-  await api.delete(`/community/review/${reviewId}/comment/${commentId}/delete/`);
+	await api.delete(
+		`/community/review/${reviewId}/comment/${commentId}/delete/`,
+	);
 }
