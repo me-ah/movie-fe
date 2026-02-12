@@ -53,3 +53,5 @@ localtype/
 # !staticfiles/.gitkeep
 # !media/.gitkeep
 certs/
+docker-compose.override.yml
+nginx/nginx.local.conf
