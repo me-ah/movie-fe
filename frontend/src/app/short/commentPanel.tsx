@@ -20,7 +20,6 @@ export default function CommentPanel() {
 	const [isLoading, setIsLoading] = useState(false);
 	const listRef = useRef<HTMLDivElement>(null);
 	const [isLoggedIn, setIsLoggedIn] = useState(false);
-	// 1. 댓글 목록 조회 로직
 	const loadComments = useCallback(async () => {
 		if (!movie?.movie_id) {
 			return;
@@ -38,21 +37,16 @@ export default function CommentPanel() {
 		}
 	}, [movie?.movie_id, setComments]);
 
-	// [추가] 패널이 열리거나 영화가 변경될 때 댓글 다시 불러오기
 	useEffect(() => {
 		if (isOpen) {
-			// 1. 로그인 상태 체크 (입력창 활성화 여부 결정)
 			const token = getAccessToken();
 			setIsLoggedIn(!!token);
-
-			// 2. 댓글 목록 로드 (실제 데이터 가져오기)
 			if (movie?.movie_id) {
 				loadComments();
 			}
 		}
 	}, [isOpen, movie?.movie_id, loadComments]);
 
-	// 댓글 등록 로직 (store 업데이트 방식)
 	const handleAddComment = async () => {
 		console.log("등록 시도 데이터:", {
 			isLoggedIn,
@@ -69,7 +63,6 @@ export default function CommentPanel() {
 		try {
 			const response = await createComment(movie.movie_id, newComment);
 			const { message, ...newCommentData } = response;
-			// 서버에서 생성된 새 댓글 객체를 리스트 맨 앞에 추가
 			setComments((prev) => [newCommentData, ...prev]);
 			setNewComment("");
 			listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
@@ -77,7 +70,6 @@ export default function CommentPanel() {
 			alert("댓글 등록에 실패했습니다.");
 		}
 	};
-	// 3. 댓글 삭제 로직 (API 연동)
 	const handleDeleteComment = async (commentId: number) => {
 		if (!confirm("댓글을 삭제하시겠습니까?")) return;
 		if (!movie?.movie_id) return;
@@ -93,7 +85,6 @@ export default function CommentPanel() {
 
 	return (
 		<aside className="w-full h-full flex flex-col bg-[#121212] text-white">
-			{/* 헤더 섹션 */}
 			<div className="p-4 flex justify-between items-center border-b border-white/10">
 				<h2 className="text-lg font-bold">
 					댓글{" "}
@@ -110,7 +101,6 @@ export default function CommentPanel() {
 				</button>
 			</div>
 
-			{/* 댓글 리스트 섹션 (스크롤 가능) */}
 			<div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar">
 				{isLoading ? (
 					<div className="flex justify-center py-10 text-gray-500 text-sm italic">
@@ -138,7 +128,6 @@ export default function CommentPanel() {
 											{new Date(comment.created_at).toLocaleDateString()}
 										</span>
 									</div>
-									{/* [추가] 삭제 버튼 (마우스 오버 시 노출) */}
 									<button
 										type="button"
 										onClick={() => handleDeleteComment(comment.comment_id)}
@@ -162,7 +151,6 @@ export default function CommentPanel() {
 				)}
 			</div>
 
-			{/* 하단 입력 섹션 */}
 			<div className="p-4 bg-[#121221] border-t border-white/10">
 				<div className="flex items-center gap-2 bg-zinc-800 rounded-lg px-3 py-2">
 					<input
@@ -185,7 +173,6 @@ export default function CommentPanel() {
 						variant="outline"
 						size="icon"
 						onClick={handleAddComment}
-						// [핵심] 비로그인 시 버튼 비활성화
 						disabled={!isLoggedIn || !newComment.trim()}
 						className={`rounded-full shrink-0 h-8 w-8 transition-colors ${
 							isLoggedIn && newComment.trim()
