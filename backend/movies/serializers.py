@@ -14,6 +14,7 @@ class MovieShortsSerializer(serializers.ModelSerializer):
     """Shorts API 응답용 Serializer"""
     genres = GenreSerializer(many=True, read_only=True)
     is_liked = serializers.SerializerMethodField()
+    comment_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Movie
@@ -31,6 +32,7 @@ class MovieShortsSerializer(serializers.ModelSerializer):
             'overview',
             'poster_path',
             'view_count',
+            'comment_count',
             'like_count',
             'is_liked',
         ]
