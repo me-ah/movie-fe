@@ -1,10 +1,9 @@
 import axios, { type InternalAxiosRequestConfig } from "axios";
 import { getAccessToken } from "@/lib/tokenStorage";
 
-const API_BASE_URL = "http://43.200.175.200/api";
 
 export const apiClient = axios.create({
-	baseURL: API_BASE_URL,
+	baseURL: process.env.NEXT_PUBLIC_API_BASE_URL,
 });
 
 apiClient.interceptors.request.use(
