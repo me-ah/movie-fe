@@ -342,3 +342,47 @@ class ReviewCommentDeleteView(APIView):
         return Response({
             "message": "댓글이 성공적으로 삭제되었습니다"
         }, status=status.HTTP_200_OK)
+
+
+# ========== 리뷰 좋아요 (POST) ==========
+class ReviewLikeView(APIView):
+    """
+    POST /api/community/review/{review_id}/like/
+    리뷰 좋아요 토글 (등록 ↔ 취소)
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        summary="리뷰 좋아요",
+        description="특정 리뷰에 좋아요를 등록하거나 취소합니다.",
+        responses={
+            200: {
+                "type": "object",
+                "properties": {
+                    "is_liked": {"type": "boolean", "description": "현재 좋아요 여부"},
+                    "like_users_count": {"type": "integer", "description": "총 좋아요 수"},
+                    "message": {"type": "string", "description": "처리 결과 메시지"}
+                }
+            }
+        }
+    )
+    def post(self, request, review_id):
+        review = get_object_or_404(Review, id=review_id)
+        user = request.user
+
+        if review.like_users.filter(id=user.id).exists():
+            # 좋아요 취소
+            review.like_users.remove(user)
+            is_liked = False
+            message = "좋아요가 취소되었습니다."
+        else:
+            # 좋아요 등록
+            review.like_users.add(user)
+            is_liked = True
+            message = "좋아요가 등록되었습니다."
+        
+        return Response({
+            "is_liked": is_liked,
+            "like_users_count": review.like_users.count(),
+            "message": message
+        }, status=status.HTTP_200_OK)
