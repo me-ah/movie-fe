@@ -91,9 +91,9 @@ export default function EditModal({ open, onOpenChange, onSaved }: Props) {
 			setSaveError(null);
 
 			await patchMe({
-				firstname: editFirstname.trim(),
-				lastname: editLastname.trim(),
-				useremail: editEmail.trim(),
+				first_name: editFirstname.trim(),
+				last_name: editLastname.trim(),
+				email: editEmail.trim(),
 			});
 
 			const data = await getMyPage({ userid: userId });
@@ -117,10 +117,8 @@ export default function EditModal({ open, onOpenChange, onSaved }: Props) {
 			setSaveError(null);
 
 			await withdrawMe();
-			await logout();
+			await logout(router);
 			onOpenChange(false);
-
-			router.replace("/auth/");
 		} catch {
 			setSaveError("회원탈퇴에 실패했습니다. 잠시 후 다시 시도해주세요.");
 		} finally {

@@ -17,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 type CreateReviewDialogProps = {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
-	onCreated?: () => void; // 생성 후 리스트 재조회/갱신용(선택)
+	onCreated?: () => void;
 };
 
 export default function CreateReviewDialog({
@@ -27,39 +27,36 @@ export default function CreateReviewDialog({
 }: CreateReviewDialogProps) {
 	const [title, setTitle] = useState("");
 	const [movieTitle, setMovieTitle] = useState("");
-	const [rating, setRating] = useState<number>(9);
+	const [rank, setRank] = useState<number>(9);
 	const [content, setContent] = useState("");
 
 	const [submitting, setSubmitting] = useState(false);
-	const [error, setError] = useState<string | null>(null);
 
 	const reset = () => {
 		setTitle("");
 		setMovieTitle("");
-		setRating(9);
+		setRank(9);
 		setContent("");
-		setError(null);
 	};
 
 	const handleClose = () => {
 		onOpenChange(false);
-		// 닫힐 때 폼 초기화하고 싶으면 주석 해제
-		// reset();
+		// reset(); // 닫힐 때 초기화하고 싶으면 주석 해제
 	};
 
 	const handleSubmit = async () => {
-		setError(null);
+		// 간단 검증 (메시지 없이 그냥 막기)
+		if (!title.trim()) return;
+		if (!movieTitle.trim()) return;
+		if (!content.trim()) return;
 
-		if (!title.trim()) return setError("제목을 입력하세요.");
-		if (!movieTitle.trim()) return setError("영화 제목을 입력하세요.");
-		if (!content.trim()) return setError("내용을 입력하세요.");
-		if (Number.isNaN(rating) || rating < 0 || rating > 10)
-			return setError("평점은 0~10 사이로 입력하세요.");
+		const numRank = Number(rank);
+		if (Number.isNaN(numRank) || numRank < 0 || numRank > 10) return;
 
 		const payload: CreateReviewPayload = {
 			title: title.trim(),
 			movie_title: movieTitle.trim(),
-			rating,
+			rank: numRank,
 			content: content.trim(),
 		};
 
@@ -69,8 +66,6 @@ export default function CreateReviewDialog({
 			reset();
 			onOpenChange(false);
 			onCreated?.();
-		} catch (_e) {
-			setError("리뷰 생성에 실패했습니다.");
 		} finally {
 			setSubmitting(false);
 		}
@@ -113,8 +108,8 @@ export default function CreateReviewDialog({
 						<div className="text-sm text-zinc-300">평점 (0~10)</div>
 						<Input
 							type="number"
-							value={rating}
-							onChange={(e) => setRating(Number(e.target.value))}
+							value={rank}
+							onChange={(e) => setRank(Number(e.target.value))}
 							min={0}
 							max={10}
 							className="border-zinc-800 bg-zinc-900/40 text-zinc-100 placeholder:text-zinc-500"

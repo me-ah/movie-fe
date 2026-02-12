@@ -38,15 +38,8 @@ export type UpdateReviewPayload = Partial<{
 	content: string;
 }>;
 
-export type ReviewListResponse = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: ReviewDetail[];
-};
-
 export async function getReviewById(reviewId: number | string) {
-	const res = await api.get<ReviewDetail>(`/review/${reviewId}/`);
+	const res = await api.get<ReviewDetail>(`/api/review/${reviewId}/`);
 	return res.data;
 }
 
@@ -65,12 +58,15 @@ export async function getReviewByIdNormalized(reviewId: number | string) {
 export type CreateReviewPayload = {
 	title: string;
 	movie_title: string;
-	rating: number;
+	rank: number;
 	content: string;
 };
 
 export async function createReview(payload: CreateReviewPayload) {
-	const res = await api.post<ReviewDetail>("/community/review/create", payload);
+	const res = await api.post<ReviewDetail>(
+		"/community/review/create/",
+		payload,
+	);
 	return res.data;
 }
 
@@ -97,40 +93,37 @@ export async function updateReview(
 export async function deleteReview(reviewId: number | string) {
 	await api.delete(`/review/${reviewId}/`);
 }
-export async function getReviewList(params?: {
-  type?: "rating" | "title" | "movie_title" | "created_at";
-  order?: "asc" | "desc";
-  page?: number;
-  rating?: number;  
-  search?: string;  
-}) {
-  const res = await api.get<ReviewListResponse>("/community/review/list/", {
-    params: {
-      type: "created_at",  
-      order: "desc",        
-      page: 1,              
-      ...params,           
-    },
-  });
 
-  return res.data;
-}
+export type ReviewListSortType =
+	| "rating"
+	| "title"
+	| "movie_title"
+	| "created_at";
+export type ReviewListOrder = "asc" | "desc";
 
-export async function getReviewListNormalized(params?: {
-  type?: "rating" | "title" | "movie_title" | "created_at";
-  order?: "asc" | "desc";
-  page?: number;
-  rating?: number;
-  search?: string;
-}) {
-  const data = await getReviewList(params);
+export type ReviewListItem = {
+	id: number;
+	title: string;
+	movie_title: string;
+	rating: number;
+	content?: string;
+	created_at: string;
+	user?: {
+		id?: number | string;
+		username?: string;
+	};
+};
 
-  return {
-    ...data,
-    results: data.results.map((r) => ({
-      ...r,
-      content: typeof r.content === "string" ? r.content.replaceAll("\r", "") : r.content,
-      comments: Array.isArray(r.comments) ? r.comments : [],
-    })),
-  };
+export type ReviewListParams = Partial<{
+	type: ReviewListSortType;
+	order: ReviewListOrder;
+	page: number;
+	rating: number; // 1~10
+	search: string; // 영화 제목 검색
+}>;
+
+// ✅ /api/community/review/list/ (Swagger에 있는 그 엔드포인트)
+export async function getCommunityReviewList(params: ReviewListParams = {}) {
+	const res = await api.get("/community/review/list/", { params });
+	return res.data;
 }

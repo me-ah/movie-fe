@@ -1,6 +1,6 @@
 "use client";
 
-type SortKey = "created_at" | "rating";
+type SortKey = "created_at" | "popular";
 
 export default function SortTabs({
 	value,
@@ -25,9 +25,9 @@ export default function SortTabs({
 				</button>
 				<button
 					type="button"
-					onClick={() => onChange("rating")}
+					onClick={() => onChange("popular")}
 					className={`pb-3 transition ${
-						value === "rating"
+						value === "popular"
 							? "text-zinc-100 border-b-2 border-blue-500"
 							: "text-zinc-500 hover:text-zinc-300"
 					}`}
