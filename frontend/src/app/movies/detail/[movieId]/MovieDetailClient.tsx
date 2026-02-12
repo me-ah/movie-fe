@@ -2,6 +2,7 @@
 
 import { Heart, Play, Share2 } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { movieApi } from "@/api/movie";
 import { Button } from "@/components/ui/button";
@@ -86,6 +87,7 @@ export default function MoviewDetailClient({ movieId }: { movieId: string }) {
 	const [liked, setLiked] = useState(false);
 
 	const [currentMovieId, setCurrentMovieId] = useState(movieId);
+	const router = useRouter();
 
 	useEffect(() => {
 		setCurrentMovieId(movieId);
@@ -293,7 +295,7 @@ export default function MoviewDetailClient({ movieId }: { movieId: string }) {
 					<div className="mt-4">
 						<RecommendsRow
 							items={recommends}
-							onSelect={(id) => setCurrentMovieId(id)}
+							onSelect={(id) => router.push(`/movies/detail/${id}`)}
 						/>
 					</div>
 				</section>

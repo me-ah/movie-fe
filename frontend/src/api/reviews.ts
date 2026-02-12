@@ -10,6 +10,30 @@ export type ReviewUser = {
 	[key: string]: unknown;
 };
 
+export type CommentUser = {
+	id: number | string;
+	username: string;
+	email?: string;
+	first_name?: string;
+	last_name?: string;
+	date_joined?: string;
+};
+
+export type ReviewComment = {
+	id: number | string;
+	content: string;
+	user: CommentUser;
+	review: number | string;
+	created_at: string;
+};
+
+export type ReviewCommentListResponse = {
+	count: number;
+	next?: string | null;
+	previous?: string | null;
+	results: ReviewComment[];
+};
+
 export type ReviewDetail = {
 	id: number;
 	title: string;
@@ -113,87 +137,62 @@ export type ReviewListParams = Partial<{
 	search: string; // 영화 제목 검색
 }>;
 
-
 export async function getCommunityReviewList(params: ReviewListParams = {}) {
 	const res = await api.get("/community/review/list/", { params });
-	console.log(res.data)
 	return res.data;
 }
 
+function isCommentListResponse(x: unknown): x is ReviewCommentListResponse {
+	if (!x || typeof x !== "object") return false;
+	const o = x as { count?: unknown; results?: unknown };
+	return typeof o.count === "number" && Array.isArray(o.results);
+}
 
+function normalizeComments(data: unknown): ReviewComment[] {
+	if (Array.isArray(data)) return data as ReviewComment[];
+	if (isCommentListResponse(data)) return data.results;
+	return [];
+}
 
-export type CommentUser = {
-  id: number | string;
-  username: string;
-  email?: string;
-  first_name?: string;
-  last_name?: string;
-  date_joined?: string;
-};
-
-export type GetCommentsParams = {
-  page?: number;            
-  order?: "asc" | "desc";  
-};
-
-
-export type ReviewComment = {
-  id: number | string;
-  content: string;
-  user: CommentUser;
-  review: number | string;
-  created_at: string;
-};
-
-export type ReviewCommentListResponse = {
-  count: number;
-  next?: string | null;
-  previous?: string | null;
-  results: ReviewComment[];
-};
-
+function getCommentCountFromData(data: unknown): number {
+	if (isCommentListResponse(data)) return data.count;
+	if (Array.isArray(data)) return data.length;
+	return 0;
+}
 
 export async function getReviewComments(reviewId: number | string) {
-  const res = await api.get<ReviewCommentListResponse | ReviewComment[]>(
-    `/community/review/${reviewId}/comment/list/`
-  );
-
-  const data: any = res.data;
-  return Array.isArray(data) ? data : (data?.results ?? []);
+	const res = await api.get<ReviewCommentListResponse | ReviewComment[]>(
+		`/community/review/${reviewId}/comment/list/`,
+	);
+	return normalizeComments(res.data);
 }
 
-// ✅ 댓글 등록
-export async function createReviewComment(reviewId: number | string, content: string) {
-  const res = await api.post(
-    `/community/review/${reviewId}/comment/create/`,
-    { content }
-  );
-  return res.data;
+export async function createReviewComment(
+	reviewId: number | string,
+	content: string,
+) {
+	const res = await api.post(`/community/review/${reviewId}/comment/create/`, {
+		content,
+	});
+	return res.data;
 }
-
 
 export async function getReviewCommentCount(reviewId: number | string) {
-  const res = await api.get<ReviewCommentListResponse | ReviewComment[]>(
-    `/community/review/${reviewId}/comment/list/`
-  );
-
-  const data: any = res.data;
-
-  // ✅ DRF pagination이면 count가 있음
-  if (typeof data?.count === "number") return data.count;
-
-  // ✅ 배열로 오면 길이가 count
-  if (Array.isArray(data)) return data.length;
-
-  return 0;
+	const res = await api.get<ReviewCommentListResponse | ReviewComment[]>(
+		`/community/review/${reviewId}/comment/list/`,
+	);
+	return getCommentCountFromData(res.data);
 }
 
-
-export type ToggleLikeResponse =
-  | { is_liked?: boolean; like_users_count?: number; like_count?: number }
-  | unknown;
+export type ToggleLikeResponse = {
+	is_liked?: boolean;
+	like_users_count?: number;
+	like_count?: number;
+};
 
 export async function toggleReviewLike(reviewId: number | string) {
-  const res = await api.post<ToggleLikeResponse>(`/community/review/${reviewId}/like/`);
-  return res.data;
+	const res = await api.post<ToggleLikeResponse>(
+		`/community/review/${reviewId}/like/`,
+	);
+	return res.data;
 }

@@ -3,7 +3,7 @@ import { MovieCarousel } from "./MovieCarousel";
 
 type HomeCarouselSectionProps = {
 	category: SubCategory;
-	onMovieClick?: () => void;
+	onMovieClick: (movieId: number | string) => void;
 };
 
 export function HomeCarouselSection({

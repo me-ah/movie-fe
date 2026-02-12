@@ -1,13 +1,15 @@
 "use client";
 
-import { Clock, Heart, Settings } from "lucide-react";
+import { Clock, Heart, LogOut, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { type BackendMyPageResponse, getMyPage } from "@/api/user";
 import EditModal from "@/app/auth/mypage/edit_modal";
 import { Button } from "@/components/ui/button";
-import { getUser } from "@/lib/userStorage";
+import { clearTokens } from "@/lib/tokenStorage";
+import { clearUser, getUser } from "@/lib/userStorage";
 import MyListSection, { type PosterItem } from "./my_list_section";
 import StatCard from "./my_statcard";
 
@@ -77,6 +79,13 @@ export default function MyPage() {
 	const [recordItems, setRecordItems] = useState<PosterItem[]>([]);
 	const [myListItems, setMyListItems] = useState<PosterItem[]>([]);
 	const [settingsOpen, setSettingsOpen] = useState(false);
+	const router = useRouter();
+
+	const handleLogout = () => {
+		clearTokens();
+		clearUser();
+		router.replace("/auth"); // 로그인 페이지로
+	};
 
 	useEffect(() => {
 		let cancelled = false;
@@ -162,6 +171,15 @@ export default function MyPage() {
 							>
 								<Settings className="mr-2 h-4 w-4" />
 								Settings
+							</Button>
+							<Button
+								type="button"
+								variant="secondary"
+								onClick={handleLogout}
+								className="h-11 rounded-xl bg-red-900/40 text-red-300 hover:bg-red-900/60 border border-red-800"
+							>
+								<LogOut className="mr-2 h-4 w-4" />
+								Logout
 							</Button>
 						</div>
 					</div>
