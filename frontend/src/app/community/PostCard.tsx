@@ -47,7 +47,6 @@ export default function PostCard({ post }: { post: BackendReviewItem }) {
 	const [editOpen, setEditOpen] = useState(false);
 	const [commentCount, setCommentCount] = useState<number>(0);
 
-	// 로컬 반영용
 	const [localPost, setLocalPost] = useState<BackendReviewItem>(post);
 
 	const [liked, setLiked] = useState(Boolean(post.is_liked));
@@ -60,7 +59,7 @@ export default function PostCard({ post }: { post: BackendReviewItem }) {
 		me?.user_id != null && String(me.user_id) === String(localPost.user.id);
 
 	const handleToggleLike = async () => {
-		// ✅ 낙관적 업데이트(즉시 반응)
+
 		const prevLiked = liked;
 		const prevCount = likeCount;
 
@@ -71,14 +70,13 @@ export default function PostCard({ post }: { post: BackendReviewItem }) {
 		try {
 			const data = (await toggleReviewLike(localPost.id)) as ToggleLikeResponse;
 
-			// ✅ 서버가 최신값을 내려주면 그걸로 동기화
+			
 			const serverLiked = data?.is_liked;
 			const serverCount = data?.like_users_count ?? data?.like_count;
 
 			if (typeof serverLiked === "boolean") setLiked(serverLiked);
 			if (typeof serverCount === "number") setLikeCount(serverCount);
 		} catch {
-			// ❌ 실패하면 롤백
 			setLiked(prevLiked);
 			setLikeCount(prevCount);
 			alert("좋아요 처리에 실패했습니다.");
@@ -134,9 +132,6 @@ export default function PostCard({ post }: { post: BackendReviewItem }) {
 						<div className="flex items-center justify-between gap-4">
 							<div>
 								<div className="font-semibold">{localPost.user.username}</div>
-								<div className="text-sm text-zinc-400">
-									@{localPost.user.email}
-								</div>
 							</div>
 							<div className="text-sm text-zinc-500">
 								{new Date(localPost.created_at).toLocaleString("ko-KR", {
@@ -148,7 +143,7 @@ export default function PostCard({ post }: { post: BackendReviewItem }) {
 						<div className="mt-4 flex items-start gap-4">
 							<div>
 								<div className="text-xl font-semibold">
-									{localPost.movie_title}
+									{localPost.title}
 								</div>
 								<Stars value={Math.round((localPost.rank ?? 0) / 2)} />
 							</div>

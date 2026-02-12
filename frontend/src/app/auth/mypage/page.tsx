@@ -20,6 +20,7 @@ type MyPageUser = {
 	useremail: string;
 	firstname: string;
 	lastname: string;
+	login_type: string; 
 	stats: {
 		watchtime: number;
 		usermylist: number;
@@ -53,6 +54,15 @@ function mapMyListMovie(
 	}));
 }
 
+function formatWatchTime(totalSeconds: number) {
+	const hours = Math.floor(totalSeconds / 3600);
+	const minutes = Math.floor((totalSeconds % 3600) / 60);
+	const seconds = totalSeconds % 60;
+
+	return { hours, minutes, seconds };
+}
+
+
 function normalize(data: BackendMyPageResponse) {
 	const u = data.userdata;
 
@@ -62,6 +72,7 @@ function normalize(data: BackendMyPageResponse) {
 		useremail: u.useremail ?? "",
 		firstname: u.firstname ?? "",
 		lastname: u.lastname ?? "",
+		login_type: data.login_type ?? "", 
 		stats: {
 			watchtime: toNumber(data.watchtime, 0),
 			usermylist: toNumber(data.usermylist, 0),
@@ -75,6 +86,7 @@ function normalize(data: BackendMyPageResponse) {
 	};
 }
 
+
 export default function MyPage() {
 	const [user, setUser] = useState<MyPageUser | null>(null);
 	const [recordItems, setRecordItems] = useState<PosterItem[]>([]);
@@ -85,9 +97,9 @@ export default function MyPage() {
 	const handleLogout = () => {
 		clearTokens();
 		clearUser();
-		router.replace("/auth"); // 로그인 페이지로
+		router.replace("/auth"); 
 	};
-
+	
 	useEffect(() => {
 		let cancelled = false;
 
@@ -124,15 +136,18 @@ export default function MyPage() {
 				useremail: "",
 				firstname: "",
 				lastname: "",
+				login_type: "",
 				stats: { watchtime: 0, usermylist: 0 },
 			},
 		[user],
-	);
+	);	
 
+	
 	const displayName = useMemo(() => {
 		const full = `${userView.firstname}${userView.lastname}`.trim();
 		return full || userView.username || "Unknown";
 	}, [userView.firstname, userView.lastname, userView.username]);
+	const time = formatWatchTime(userView.stats.watchtime);
 
 	return (
 		<div className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -174,6 +189,7 @@ export default function MyPage() {
 								Settings
 							</Button>
 
+							{userView.login_type === "email" && (
 							<Button
 								type="button"
 								variant="secondary"
@@ -183,6 +199,8 @@ export default function MyPage() {
 								<KeyRound className="mr-2 h-4 w-4" />
 								비밀번호 변경
 							</Button>
+							)}
+
 							<Button
 								type="button"
 								variant="secondary"
@@ -200,7 +218,7 @@ export default function MyPage() {
 					<StatCard
 						icon={<Clock className="h-5 w-5 text-red-500" />}
 						label="Watch Time"
-						value={`${userView.stats.watchtime} hrs`}
+						value={`${time.hours}h ${time.minutes}m`}
 					/>
 					<StatCard
 						icon={<Heart className="h-5 w-5 text-red-500" />}

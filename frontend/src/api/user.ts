@@ -23,6 +23,7 @@ export type BackendMyPageResponse = {
 		firstname: string;
 		lastname: string;
 	};
+	login_type: string;
 	watchtime: string | number;
 	usermylist: string | number;
 
@@ -46,6 +47,7 @@ export async function getMyPage(payload: GetMyPagePayload) {
 		"/accounts/mypage/",
 		payload,
 	);
+
 	return res.data;
 }
 
