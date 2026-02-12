@@ -7,6 +7,7 @@ import {
 	deleteAdminUser,
 	getAdminUserDetail,
 } from "@/api/admin";
+import EditMemberDialog from "@/app/admin/EditMemberDialog";
 import {
 	AlertDialog,
 	AlertDialogAction,
@@ -111,6 +112,22 @@ export default function UserDetailPage() {
 		k.startsWith("pref_"),
 	) as (keyof AdminUserDetail)[];
 
+	const handleUserUpdated = () => {
+		// Refresh user data
+		const fetchData = async () => {
+			setLoading(true);
+			try {
+				const data = await getAdminUserDetail(id);
+				setUser(data);
+			} catch {
+				setErr("사용자 정보를 불러오지 못했습니다.");
+			} finally {
+				setLoading(false);
+			}
+		};
+		fetchData();
+	};
+
 	return (
 		<div className="min-h-screen bg-zinc-950 text-zinc-100 p-6 sm:p-10">
 			<div className="mx-auto max-w-4xl">
@@ -124,6 +141,8 @@ export default function UserDetailPage() {
 						</p>
 					</div>
 					<div className="flex gap-2">
+						<EditMemberDialog user={user} onUserUpdated={handleUserUpdated} />
+
 						<AlertDialog>
 							<AlertDialogTrigger asChild>
 								<Button

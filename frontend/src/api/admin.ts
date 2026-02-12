@@ -185,6 +185,22 @@ export async function getAdminUserDetail(id: number) {
 	return res.data;
 }
 
+export type UpdateAdminUserParams = {
+	password?: string;
+	first_name?: string;
+	last_name?: string;
+	email?: string;
+	is_staff?: boolean;
+	is_active?: boolean;
+	is_onboarding_completed?: boolean;
+	[key: string]: string | number | boolean | undefined; // For dynamic pref_ fields
+};
+
+export async function updateAdminUser(id: number, data: UpdateAdminUserParams) {
+	const res = await api.patch<AdminUserDetail>(`/admin/accounts/${id}/`, data);
+	return res.data;
+}
+
 export async function deleteAdminUser(id: number) {
 	await api.delete(`/admin/accounts/${id}/`);
 }
