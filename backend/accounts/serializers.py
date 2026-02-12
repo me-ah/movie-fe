@@ -94,15 +94,13 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     def validate(self, attrs):
         username = attrs.get("username")
         password = attrs.get("password")
+        
+        # 오직 username과 password로만 인증 시도
         user = authenticate(username=username, password=password)
-        if not user:
-            try:
-                user_obj = User.objects.get(email=username)
-                user = authenticate(username=user_obj.username, password=password)
-            except User.DoesNotExist:
-                pass
+        
         if not user:
             raise serializers.ValidationError('아이디 또는 비밀번호가 일치하지 않습니다.')
+        
         refresh = self.get_token(user)
         return {
             "message": "로그인 성공",
@@ -126,7 +124,7 @@ class MyPageRequestSerializer(serializers.Serializer):
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('email', 'first_name', 'last_name')
+        fields = ('email', 'first_name', 'last_name') # 온보딩 필드는 절대 포함하지 않음
         extra_kwargs = {
             'email': {'required': False},
             'first_name': {'required': False},
@@ -134,8 +132,10 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         }
 
     def update(self, instance, validated_data):
+        # 명시적으로 이메일, 성, 이름만 업데이트
         for attr, value in validated_data.items():
-            setattr(instance, attr, value)
+            if attr in ['email', 'first_name', 'last_name']:
+                setattr(instance, attr, value)
         instance.save()
         return instance
 

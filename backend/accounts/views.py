@@ -1,6 +1,7 @@
 import os
 import requests
 from django.contrib.auth import get_user_model
+from django.contrib.auth.models import update_last_login # 추가
 from django.db.models import Sum, F
 from rest_framework import status, generics, views
 from rest_framework.response import Response
@@ -43,12 +44,18 @@ class ChangePasswordView(views.APIView):
     @extend_schema(request=ChangePasswordSerializer)
     def post(self, request):
         user = request.user
+        
+        # 소셜 로그인 사용자는 비밀번호 변경 불가
         if user.login_type != 'email':
-            return Response({"error": "Social login users cannot change password."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "소셜 로그인 사용자는 비밀번호를 변경할 수 없습니둥."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
         serializer = ChangePasswordSerializer(data=request.data)
         if serializer.is_valid():
             if not user.check_password(serializer.validated_data.get("old_password")):
-                return Response({"old_password": ["Wrong password."]}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"old_password": ["현재 비밀번호가 틀렸습니둥."]}, status=status.HTTP_400_BAD_REQUEST)
             user.set_password(serializer.validated_data.get("new_password"))
             user.save()
             return Response({'status': 'success', 'message': 'Password updated successfully'}, status=status.HTTP_200_OK)
@@ -143,6 +150,10 @@ class KakaoLoginView(views.APIView):
         except User.DoesNotExist:
             if email and User.objects.filter(email=email).exists(): email = f"{username}@kakao.com"
             user = User.objects.create_user(username=username, email=email or f"{username}@kakao.com", password=None, first_name=nickname, login_type='kakao')
+        
+        # 마지막 로그인 시간 기록
+        update_last_login(None, user)
+        
         refresh = RefreshToken.for_user(user)
         return Response({"message": "로그인 성공", "user": {"userid": user.id, "username": user.username, "useremail": user.email, "firstname": user.first_name, "lastname": user.last_name, "onboarding": user.is_onboarding_completed}, "token": str(refresh.access_token), "refresh": str(refresh)})
 
@@ -167,6 +178,10 @@ class GoogleLoginView(views.APIView):
         except User.DoesNotExist:
             if email and User.objects.filter(email=email).exists(): email = f"{username}@google.com"
             user = User.objects.create_user(username=username, email=email or f"{username}@google.com", password=None, first_name=first_name, last_name=last_name, login_type='google')
+        
+        # 마지막 로그인 시간 기록
+        update_last_login(None, user)
+        
         refresh = RefreshToken.for_user(user)
         return Response({"message": "로그인 성공", "user": {"userid": user.id, "username": user.username, "useremail": user.email, "firstname": user.first_name, "lastname": user.last_name, "onboarding": user.is_onboarding_completed}, "token": str(refresh.access_token), "refresh": str(refresh)})
 
@@ -193,6 +208,14 @@ class OnboardingView(views.APIView):
     @extend_schema(request=OnboardingSerializer)
     def post(self, request):
         user = request.user
+        
+        # 이미 온보딩을 완료한 경우 차단
+        if user.is_onboarding_completed:
+            return Response(
+                {"error": "이미 온보딩을 완료한 사용자입니둥."}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+            
         serializer = OnboardingSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
