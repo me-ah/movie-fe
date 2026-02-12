@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "accounts",
     "home",
     "movies",
+    "management",
     "community",
 ]
 
