@@ -131,7 +131,7 @@ export default function Home() {
 									<button
 										type="button"
 										onClick={() =>
-											router.push(`/movies/${featuredMovie.movie_id}`)
+											router.push(`/movies/detail/${featuredMovie.movie_id}`)
 										}
 										className="flex items-center gap-2 px-8 py-3 bg-white/10 backdrop-blur-sm text-white rounded-lg hover:bg-white/20 transition-colors"
 									>
@@ -149,7 +149,9 @@ export default function Home() {
 						<HomeCarouselSection
 							key={`sub-${category.category_title}`}
 							category={category}
-							onMovieClick={() => router.push("/shorts")}
+							onMovieClick={(movieId) =>
+								router.push(`/movies/detail/${movieId}`)
+							}
 						/>
 					))}
 				</div>

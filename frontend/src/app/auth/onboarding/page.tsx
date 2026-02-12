@@ -116,7 +116,6 @@ export default function OnBoarding() {
 		try {
 			await api.post("/accounts/onboarding/", {
 				...initialPrefs,
-				onboarding: true,
 			});
 
 			router.replace("/home");
@@ -131,7 +130,6 @@ export default function OnBoarding() {
 		try {
 			await api.post("/accounts/onboarding/", {
 				...initialPrefs,
-				onboarding: true,
 			});
 
 			router.replace("/home");

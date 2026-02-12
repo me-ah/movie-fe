@@ -20,7 +20,6 @@ export default function CommentPanel() {
 	const [isLoading, setIsLoading] = useState(false);
 	const listRef = useRef<HTMLDivElement>(null);
 	const [isLoggedIn, setIsLoggedIn] = useState(false);
-
 	const loadComments = useCallback(async () => {
 		if (!movie?.movie_id) {
 			return;
@@ -71,7 +70,6 @@ export default function CommentPanel() {
 			alert("댓글 등록에 실패했습니다.");
 		}
 	};
-
 	const handleDeleteComment = async (commentId: number) => {
 		if (!confirm("댓글을 삭제하시겠습니까?")) return;
 		if (!movie?.movie_id) return;

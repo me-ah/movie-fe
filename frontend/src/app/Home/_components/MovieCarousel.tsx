@@ -11,7 +11,7 @@ export type MovieItem = {
 type MovieCarouselProps = {
 	title: string;
 	movies: MovieItem[];
-	onMovieClick?: () => void;
+	onMovieClick?: (movieId: number | string) => void;
 };
 
 export function MovieCarousel({
@@ -86,7 +86,7 @@ export function MovieCarousel({
 						<button
 							key={`${movie.id}-${index}`}
 							type="button"
-							onClick={onMovieClick}
+							onClick={() => onMovieClick?.(movie.id)}
 							className="flex-shrink-0 w-40 group"
 						>
 							<div className="aspect-[2/3] rounded-lg overflow-hidden bg-white/10">

@@ -1,20 +1,40 @@
+<<<<<<< HEAD
+// 쇼츠
 import axios, { type InternalAxiosRequestConfig } from "axios";
 import { getAccessToken } from "@/lib/tokenStorage";
 
+// 1. 기본 설정 및 Base URL 적용
+=======
+import axios, { type InternalAxiosRequestConfig } from "axios";
+import { getAccessToken } from "@/lib/tokenStorage";
+
+>>>>>>> fe_dev
 const API_BASE_URL = "http://43.200.175.200/api";
 
 export const apiClient = axios.create({
 	baseURL: API_BASE_URL,
 });
 
+<<<<<<< HEAD
+// 2. 인증 정보(인터셉터) 추가
+apiClient.interceptors.request.use(
+	(config: InternalAxiosRequestConfig) => {
+		// 타입을 명시적으로 지정
+		const token = getAccessToken(); // 로컬 스토리지 확인
+=======
 apiClient.interceptors.request.use(
 	(config: InternalAxiosRequestConfig) => {
 		const token = getAccessToken();
+>>>>>>> fe_dev
 
 		console.log("요청 경로:", config.url);
 		console.log("토큰 확인:", token);
 
 		if (token) {
+<<<<<<< HEAD
+			// config.headers는 Axios 1.x에서 필수 값이므로 바로 할당 가능합니다.
+=======
+>>>>>>> fe_dev
 			config.headers.Authorization = `Bearer ${token}`;
 			console.log("Authorization 헤더 추가 완료");
 		} else {
@@ -33,8 +53,14 @@ export interface MovieGenre {
 	name: string;
 }
 
+<<<<<<< HEAD
+// 2. 개별 영화(results 안의 객체) 타입 정의
+export interface ShortsMovie {
+	movie_id: string; // JSON에서 문자열 "79771"로 들어오므로 string 정의
+=======
 export interface ShortsMovie {
 	movie_id: string;
+>>>>>>> fe_dev
 	title: string;
 	youtube_key: string;
 	embed_url: string;
@@ -42,7 +68,11 @@ export interface ShortsMovie {
 	genres: MovieGenre[];
 	vote_average: number;
 	star_rating: number;
+<<<<<<< HEAD
+	ott_providers: string[]; // OTT 정보가 비어있으므로 임시 any, 상세 구조 알면 추후 수정 가능
+=======
 	ott_providers: string[];
+>>>>>>> fe_dev
 	is_in_theaters: boolean;
 	overview: string;
 	poster_path: string;
@@ -51,16 +81,28 @@ export interface ShortsMovie {
 	is_liked: boolean;
 }
 
+<<<<<<< HEAD
+// 쇼츠 데이터 타입 정의
+=======
+>>>>>>> fe_dev
 export interface ShortResponse {
 	next_cursor: string | null;
 	results: ShortsMovie[];
 }
 
+<<<<<<< HEAD
+// 쇼츠 호출 함수 (cursor 파라미터 사용)
+=======
+>>>>>>> fe_dev
 export const fetchShorts = async (
 	cursor: string | null,
 ): Promise<ShortResponse> => {
 	const { data } = await apiClient.get("/movies/shorts/", {
+<<<<<<< HEAD
+		params: { cursor }, // 서버에서 요구한 'cursor' 명칭 적용
+=======
 		params: { cursor },
+>>>>>>> fe_dev
 	});
 	return data;
 };
