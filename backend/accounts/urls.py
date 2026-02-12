@@ -1,4 +1,4 @@
-from django.urls import path
+from django.urls import path, re_path
 from rest_framework_simplejwt.views import TokenRefreshView
 from .views import (
     RegisterView, 
@@ -24,7 +24,7 @@ urlpatterns = [
     path('mypage/', MyPageView.as_view(), name='user_mypage'),
     path('watch-history/', WatchHistoryView.as_view(), name='watch_history'),
     
-    # Profile management
-    path('profile/', UserProfileUpdateView.as_view(), name='user_profile_update'),
-    path('profile/delete/', UserProfileDeleteView.as_view(), name='user_profile_delete'),
+    # Profile management (Allow both with and without trailing slash)
+    re_path(r'^profile/?$', UserProfileUpdateView.as_view(), name='user_profile_update'),
+    re_path(r'^profile/delete/?$', UserProfileDeleteView.as_view(), name='user_profile_delete'),
 ]

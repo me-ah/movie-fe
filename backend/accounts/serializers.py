@@ -133,6 +133,12 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
             'last_name': {'required': False},
         }
 
+    def update(self, instance, validated_data):
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+        return instance
+
 class MovieMiniSerializer(serializers.Serializer):
     """Simplified movie info for MyPage"""
     name = serializers.CharField(source='title')
