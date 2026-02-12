@@ -1,5 +1,3 @@
-// src/api/auth.ts
-
 import { useRouter } from "next/navigation";
 import api from "@/lib/authClient";
 import { clearTokens, setTokens } from "@/lib/tokenStorage";

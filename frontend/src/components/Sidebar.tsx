@@ -61,7 +61,6 @@ export function Sidebar() {
 				})}
 			</nav>
 
-			{/* Footer Menu (My Page) */}
 			<div className="mt-auto flex flex-col items-center">
 				{footerItems.map((item) => {
 					const isActive = pathname === item.url;
