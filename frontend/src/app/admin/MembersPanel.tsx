@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { type AdminUserItem, getAdminUserList } from "@/api/admin";
 import { Button } from "@/components/ui/button";
@@ -8,6 +9,7 @@ import AddMemberDialog from "./AddMemberDialog";
 
 type Member = {
 	no: number;
+	id: number;
 	username: string;
 	name: string;
 	joinedAt: string;
@@ -46,6 +48,7 @@ function RoleBadge({ role }: { role: Member["role"] }) {
 }
 
 export default function MembersPanel() {
+	const router = useRouter();
 	const [page, setPage] = useState(1);
 	const pageSize = 10;
 
@@ -87,6 +90,7 @@ export default function MembersPanel() {
 
 			return {
 				no: start + idx + 1,
+				id: u.id,
 				username: u.username,
 				name: fullName || u.username,
 				joinedAt,
@@ -195,6 +199,7 @@ export default function MembersPanel() {
 													variant="ghost"
 													size="sm"
 													className="text-zinc-300 hover:text-zinc-100"
+													onClick={() => router.push(`/admin/users/${m.id}`)}
 												>
 													관리
 												</Button>

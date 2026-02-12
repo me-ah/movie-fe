@@ -140,3 +140,47 @@ export async function createAdminUser(data: CreateAdminUserParams) {
 	const res = await api.post<AdminUserItem>("/admin/accounts/", data);
 	return res.data;
 }
+
+export type AdminUserDetail = {
+	id: number;
+	password?: string;
+	last_login: string | null;
+	is_superuser: boolean;
+	username: string;
+	first_name: string;
+	last_name: string;
+	email: string;
+	is_staff: boolean;
+	is_active: boolean;
+	date_joined: string;
+	login_type: string;
+	is_onboarding_completed: boolean;
+	groups: number[];
+	user_permissions: number[];
+
+	// preferences
+	pref_action: number;
+	pref_adventure: number;
+	pref_animation: number;
+	pref_comedy: number;
+	pref_crime: number;
+	pref_documentary: number;
+	pref_drama: number;
+	pref_family: number;
+	pref_fantasy: number;
+	pref_history: number;
+	pref_horror: number;
+	pref_music: number;
+	pref_mystery: number;
+	pref_romance: number;
+	pref_science_fiction: number;
+	pref_tv_movie: number;
+	pref_thriller: number;
+	pref_war: number;
+	pref_western: number;
+};
+
+export async function getAdminUserDetail(id: number) {
+	const res = await api.get<AdminUserDetail>(`/admin/accounts/${id}/`);
+	return res.data;
+}
