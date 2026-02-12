@@ -4,7 +4,7 @@ import random
 import redis
 
 from django.shortcuts import get_object_or_404
-from django.db.models import Case, When, F
+from django.db.models import Case, When, F, Count
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -55,7 +55,7 @@ def get_shorts_list(user, cursor_idx, page_size=10):
         return Movie.objects.none()
         
     preserved = Case(*[When(id=pk, then=pos) for pos, pk in enumerate(target_ids)])
-    return Movie.objects.filter(id__in=target_ids).order_by(preserved)
+    return Movie.objects.filter(id__in=target_ids).annotate(comment_count=Count('comments')).order_by(preserved)
 
 
 # ========== Shorts API View ==========
@@ -94,7 +94,7 @@ class MovieShortsView(APIView):
             movies_qs = get_shorts_list(request.user, cursor_idx, page_size)
         else:
             # 비로그인: 기존 PK 순서 로직 유지
-            movies_qs = Movie.objects.filter(id__gt=cursor_idx).order_by('id')[:page_size]
+            movies_qs = Movie.objects.annotate(comment_count=Count('comments')).filter(id__gt=cursor_idx).order_by('id')[:page_size]
 
         # ---- 직렬화 및 응답 ----
         serializer = MovieShortsSerializer(movies_qs, many=True, context={'request': request})
@@ -121,7 +121,8 @@ class MovieShortsDetailView(APIView):
     @extend_schema(responses={200: ShortsDetailResponseSerializer})
     def get(self, request, movie_id):
         # ---- 해당 movie_id 영화 조회 (없으면 404) ----
-        movie = get_object_or_404(Movie, movie_id=movie_id)
+        # comment_count 주석 추가
+        movie = get_object_or_404(Movie.objects.annotate(comment_count=Count('comments')), movie_id=movie_id)
 
         # ---- current: 해당 영화 직렬화 ----
         current = MovieShortsSerializer(movie, context={'request': request}).data
@@ -131,10 +132,11 @@ class MovieShortsDetailView(APIView):
         
         if request.user.is_authenticated:
             # 상세 진입 시에는 플레이리스트의 처음부터 추천을 이어감
+            # get_shorts_list는 이미 annotate가 적용됨
             next_movies_qs = get_shorts_list(request.user, 0, page_size)
         else:
             # 비로그인: 해당 영화 이후 PK 순서대로
-            next_movies_qs = Movie.objects.filter(id__gt=movie.id).order_by('id')[:page_size]
+            next_movies_qs = Movie.objects.annotate(comment_count=Count('comments')).filter(id__gt=movie.id).order_by('id')[:page_size]
 
         # ---- 응답 ----
         return Response({
