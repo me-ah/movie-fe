@@ -52,3 +52,4 @@ localtype/
 # 만약 미디어 파일이나 정적 파일 폴더 구조만 유지하고 싶다면 아래 주석을 해제하세요
 # !staticfiles/.gitkeep
 # !media/.gitkeep
+certs/
