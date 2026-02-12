@@ -16,25 +16,14 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import CommentsList from "@/app/community/CommentsList"; // ✅ 추가
 
 type CommentsDialogProps = {
 	open: boolean;
 	onOpenChange: (open: boolean) => void;
 	postId: number;
-	onCommentCreated?: () => void; // ✅ 추가
+	onCommentCreated?: () => void;
 };
-
-function formatTime(iso?: string) {
-	if (!iso) return "";
-	return new Date(iso).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
-}
-
-function pickUserName(user?: ReviewComment["user"]) {
-	const fullName = [user?.first_name, user?.last_name]
-		.filter(Boolean)
-		.join(" ");
-	return user?.username ?? (fullName || "anonymous");
-}
 
 export default function CommentsDialog({
 	open,
@@ -69,14 +58,11 @@ export default function CommentsDialog({
 		if (!content) return;
 
 		setSubmitting(true);
-
 		try {
 			await createReviewComment(postId, content);
 			setCommentText("");
-
 			onCommentCreated?.();
 			await fetchComments();
-		} catch {
 		} finally {
 			setSubmitting(false);
 		}
@@ -98,6 +84,7 @@ export default function CommentsDialog({
 				<DialogDescription className="sr-only">
 					이 게시글에 대한 댓글 목록
 				</DialogDescription>
+
 				<div className="mt-2 space-y-4">
 					{loading ? (
 						<div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 text-sm text-zinc-400">
@@ -108,26 +95,11 @@ export default function CommentsDialog({
 							아직 댓글이 없습니다. 첫 댓글을 남겨보세요.
 						</div>
 					) : (
-						<div className="space-y-3">
-							{comments.map((c) => (
-								<div
-									key={String(c.id)}
-									className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4"
-								>
-									<div className="flex items-center justify-between">
-										<div className="font-medium text-zinc-100">
-											{pickUserName(c.user)}
-										</div>
-										<div className="text-xs text-zinc-500">
-											{formatTime(c.created_at)}
-										</div>
-									</div>
-									<p className="mt-2 whitespace-pre-wrap text-sm text-zinc-300">
-										{c.content}
-									</p>
-								</div>
-							))}
-						</div>
+						<CommentsList
+						reviewId={postId}          
+						comments={comments}
+						onChanged={fetchComments}
+						/>
 					)}
 
 					<Separator className="bg-zinc-800" />
