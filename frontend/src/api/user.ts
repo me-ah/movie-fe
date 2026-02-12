@@ -1,5 +1,4 @@
 import api from "@/lib/apiClient";
-
 export type MeResponse = {
 	id: number;
 	username: string;
@@ -10,7 +9,53 @@ export type MeResponse = {
 	avatarUrl?: string;
 };
 
-export async function getMe() {
-	const res = await api.get<MeResponse>("/me");
+export type UpdateMePayload = {
+	first_name: string;
+	last_name: string;
+	email: string;
+};
+
+export type BackendMyPageResponse = {
+	userdata: {
+		userid: string | number;
+		username: string;
+		useremail: string;
+		firstname: string;
+		lastname: string;
+	};
+	login_type: string;
+	watchtime: string | number;
+	usermylist: string | number;
+
+	recordmovie?: Record<
+		string,
+		{ recordmovie_name?: string; recordmovie_poster?: string }
+	>;
+
+	mylistmovie?: Record<
+		string,
+		{ mylistmovie_name?: string; mylistmovie_poster?: string }
+	>;
+};
+
+export type GetMyPagePayload = {
+	userid: string | number;
+};
+
+export async function getMyPage(payload: GetMyPagePayload) {
+	const res = await api.post<BackendMyPageResponse>(
+		"/accounts/mypage/",
+		payload,
+	);
+
 	return res.data;
+}
+
+export async function patchMe(payload: UpdateMePayload) {
+	const res = await api.patch("/accounts/profile/", payload);
+	return res.data;
+}
+
+export async function withdrawMe() {
+	return api.delete("/accounts/profile/delete/");
 }

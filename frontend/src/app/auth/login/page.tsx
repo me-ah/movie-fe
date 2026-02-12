@@ -1,23 +1,23 @@
 ﻿"use client";
 
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { login } from "@/api/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { setTokens } from "@/lib/tokenStorage";
 
 export default function Login() {
 	const router = useRouter();
 
-	const [email, setEmail] = useState("");
+	const [username, setUsername] = useState("");
 	const [password, setPassword] = useState("");
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
 	const handleLogin = async () => {
-		if (!email || !password) {
+		if (!username || !password) {
 			setError("이메일과 비밀번호를 입력해주세요.");
 			return;
 		}
@@ -26,10 +26,14 @@ export default function Login() {
 			setLoading(true);
 			setError(null);
 
-			const { accessToken, refreshToken } = await login(email, password);
+			const user_data = await login(username, password);
+			const isOnboding = user_data.onboding;
 
-			setTokens(accessToken, refreshToken);
-			router.push("/");
+			if (isOnboding) {
+				router.push("/home");
+			} else {
+				router.push("/auth/onboarding");
+			}
 		} catch (err: unknown) {
 			console.error("Login failed:", err);
 			setError("로그인에 실패했습니다. 정보를 확인해주세요.");
@@ -41,14 +45,22 @@ export default function Login() {
 	return (
 		<div className="min-h-screen w-full bg-zinc-950 text-zinc-100 flex items-center justify-center p-6">
 			<div className="relative w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900/40 backdrop-blur-md shadow-[0_10px_40px_rgba(0,0,0,0.6)] p-8">
+				<Button
+					className="absolute left-6 top-6 text-white-800  "
+					variant="ghost"
+					onClick={() => router.back()}
+				>
+					<ArrowLeft className="!w-8 !h-8" />
+				</Button>
+
 				<h1 className="text-center text-2xl font-semibold mb-8">미아릭스</h1>
 
 				<div className="space-y-4">
 					<Input
-						type="email"
-						placeholder="이메일"
-						value={email}
-						onChange={(e) => setEmail(e.target.value)}
+						type="text"
+						placeholder="아이디"
+						value={username}
+						onChange={(e) => setUsername(e.target.value)}
 						disabled={loading}
 						className="h-12 rounded-xl bg-zinc-800/60 border-zinc-700"
 					/>
@@ -72,12 +84,6 @@ export default function Login() {
 						{loading ? "로그인 중..." : "로그인"}
 					</Button>
 				</div>
-				{/* 
-				<div className="my-6 flex items-center gap-4">
-					<div className="h-px flex-1 bg-zinc-700/70" />
-					<span className="text-xs text-zinc-400">다른 계정으로 로그인</span>
-					<div className="h-px flex-1 bg-zinc-700/70" />
-				</div> */}
 
 				<div className="mt-6 text-center text-sm text-zinc-400">
 					계정이 없으신가요? 바로 가입하세요!{" "}
