@@ -1,196 +1,168 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getReviewByIdNormalized, type ReviewDetail } from "@/api/reviews";
 import { Button } from "@/components/ui/button";
 import {
-	Dialog,
-	DialogContent,
-	DialogDescription,
-	DialogFooter,
-	DialogHeader,
-	DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { createReviewComment, getReviewComments, type ReviewComment } from "@/api/reviews";
+
 
 type CommentsDialogProps = {
-	open: boolean;
-	onOpenChange: (open: boolean) => void;
-	postId: number;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  postId: number;
+  onCommentCreated?: () => void; // ✅ 추가
 };
 
-type CommentUser = {
-	username?: string;
-	name?: string;
-	firstname?: string;
-	lastname?: string;
-};
 
 function formatTime(iso?: string) {
-	if (!iso) return "";
-	return new Date(iso).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+  if (!iso) return "";
+  return new Date(iso).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
 }
 
-function pickUserName(user?: CommentUser) {
-	const fullName = [user?.firstname, user?.lastname].filter(Boolean).join(" ");
-	return user?.username ?? user?.name ?? (fullName || "anonymous");
+function pickUserName(user?: ReviewComment["user"]) {
+  const fullName = [user?.first_name, user?.last_name].filter(Boolean).join(" ");
+  return user?.username ?? (fullName || "anonymous");
 }
 
-export default function CommentsDialog({
-	open,
-	onOpenChange,
-	postId,
-}: CommentsDialogProps) {
-	const reviewId = postId;
+export default function CommentsDialog({ open, onOpenChange, postId, onCommentCreated }: CommentsDialogProps) {
+  const reviewId = postId;
 
-	const [commentText, setCommentText] = useState("");
+  const [commentText, setCommentText] = useState("");
+  const [comments, setComments] = useState<ReviewComment[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  
+  const fetchComments = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // ✅ 정렬/페이지 안 쓰면 그냥 기본 호출
+      const data = await getReviewComments(reviewId);
+      setComments(data);
+    } catch {
+      setError("댓글을 불러오지 못했습니다.");
+      setComments([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-	const [review, setReview] = useState<ReviewDetail | null>(null);
-	const [loading, setLoading] = useState(false); // ✅ 추가
-	const [submitting, setSubmitting] = useState(false);
-	const [error, setError] = useState<string | null>(null);
-
-	const comments = useMemo(() => review?.comments ?? [], [review]);
-
-	useEffect(() => {
-		if (!open) return;
-
-		const fetchReview = async () => {
-			setLoading(true);
-			setError(null);
-			try {
-				const data = await getReviewByIdNormalized(reviewId);
-				setReview(data);
-			} catch {
-				setError("댓글을 불러오지 못했습니다.");
-				setReview(null);
-			} finally {
-				setLoading(false);
-			}
-		};
-
-		fetchReview();
-	}, [open, reviewId]);
+  useEffect(() => {
+    if (!open) return;
+    fetchComments();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, reviewId]);
 
 	const handleSubmitComment = async () => {
-		if (!commentText.trim()) return;
+		const content = commentText.trim();
+		if (!content) return;
 
 		setSubmitting(true);
 		setError(null);
+
 		try {
-			// TODO: 댓글 POST 엔드포인트 확정되면 연결
-			// await api.post(`/api/review/${reviewId}/comments/`, { content: commentText.trim() });
+			await createReviewComment(reviewId, content);
 
 			setCommentText("");
 
-			// ✅ 등록 후 최신화: 여기서도 동일 로직으로 다시 fetch
-			setLoading(true);
-			try {
-				const data = await getReviewByIdNormalized(reviewId);
-				setReview(data);
-			} finally {
-				setLoading(false);
-			}
+			// ✅ PostCard 숫자 즉시 +1
+			onCommentCreated?.();
+
+			// ✅ 모달 리스트 갱신
+			await fetchComments();
 		} catch {
 			setError("댓글 등록에 실패했습니다.");
 		} finally {
 			setSubmitting(false);
 		}
-	};
+		};
 
-	return (
-		<Dialog
-			open={open}
-			onOpenChange={(next) => {
-				onOpenChange(next);
-				if (!next) {
-					setCommentText("");
-					setError(null);
-				}
-			}}
-		>
-			<DialogContent className="max-w-2xl border-zinc-800 bg-zinc-950 text-zinc-100">
-				<DialogHeader>
-					<DialogTitle className="text-zinc-100">댓글</DialogTitle>
-					<DialogDescription className="text-zinc-400">
-						이 게시글에 대한 의견을 남겨보세요.
-					</DialogDescription>
-				</DialogHeader>
 
-				<div className="mt-2 space-y-4">
-					{/* 에러 */}
-					{error && (
-						<div className="rounded-xl border border-red-900/60 bg-red-950/30 p-3 text-sm text-red-200">
-							{error}
-						</div>
-					)}
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        onOpenChange(next);
+        if (!next) {
+          setCommentText("");
+          setError(null);
+          setComments([]);
+        }
+      }}
+    >
+      <DialogContent className="max-w-2xl border-zinc-800 bg-zinc-950 text-zinc-100">
+	    <DialogTitle className="sr-only">댓글</DialogTitle>
+		<DialogDescription className="sr-only">
+			이 게시글에 대한 댓글 목록
+		</DialogDescription>
+        <div className="mt-2 space-y-4">
+          {loading ? (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 text-sm text-zinc-400">
+              불러오는 중...
+            </div>
+          ) : comments.length === 0 ? (
+            <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 text-sm text-zinc-400">
+              아직 댓글이 없습니다. 첫 댓글을 남겨보세요.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {comments.map((c) => (
+                <div
+                  key={String(c.id)}
+                  className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4"
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium text-zinc-100">{pickUserName(c.user)}</div>
+                    <div className="text-xs text-zinc-500">{formatTime(c.created_at)}</div>
+                  </div>
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-300">{c.content}</p>
+                </div>
+              ))}
+            </div>
+          )}
 
-					{/* ✅ 로딩/빈상태/리스트 렌더링 문법 수정 */}
-					{loading ? (
-						<div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 text-sm text-zinc-400">
-							불러오는 중...
-						</div>
-					) : comments.length === 0 ? (
-						<div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4 text-sm text-zinc-400">
-							아직 댓글이 없습니다. 첫 댓글을 남겨보세요.
-						</div>
-					) : (
-						<div className="space-y-3">
-							{comments.map((c) => (
-								<div
-									key={String(c.id)}
-									className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-4"
-								>
-									<div className="flex items-center justify-between">
-										<div className="font-medium text-zinc-100">
-											{pickUserName(c.user)}
-										</div>
-										<div className="text-xs text-zinc-500">
-											{formatTime(c.created_at)}
-										</div>
-									</div>
-									<p className="mt-2 whitespace-pre-wrap text-sm text-zinc-300">
-										{c.content}
-									</p>
-								</div>
-							))}
-						</div>
-					)}
+          <Separator className="bg-zinc-800" />
 
-					<Separator className="bg-zinc-800" />
+          <div className="flex items-center gap-2">
+            <Input
+              value={commentText}
+              onChange={(e) => setCommentText(e.target.value)}
+              placeholder="댓글을 입력하세요"
+              className="border-zinc-800 bg-zinc-900/40 text-zinc-100 placeholder:text-zinc-500"
+              disabled={submitting}
+            />
+            <Button
+              type="button"
+              onClick={handleSubmitComment}
+              disabled={submitting || !commentText.trim()}
+              className="bg-blue-500 hover:bg-blue-600"
+            >
+              {submitting ? "등록 중..." : "등록"}
+            </Button>
+          </div>
+        </div>
 
-					{/* 댓글 입력 */}
-					<div className="flex items-center gap-2">
-						<Input
-							value={commentText}
-							onChange={(e) => setCommentText(e.target.value)}
-							placeholder="댓글을 입력하세요"
-							className="border-zinc-800 bg-zinc-900/40 text-zinc-100 placeholder:text-zinc-500"
-							disabled={submitting}
-						/>
-						<Button
-							type="button"
-							onClick={handleSubmitComment}
-							disabled={submitting || !commentText.trim()}
-							className="bg-blue-500 hover:bg-blue-600"
-						>
-							{submitting ? "등록 중..." : "등록"}
-						</Button>
-					</div>
-				</div>
-
-				<DialogFooter>
-					<Button
-						type="button"
-						variant="secondary"
-						onClick={() => onOpenChange(false)}
-						className="border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
-					>
-						닫기
-					</Button>
-				</DialogFooter>
-			</DialogContent>
-		</Dialog>
-	);
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => onOpenChange(false)}
+            className="border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+          >
+            닫기
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }

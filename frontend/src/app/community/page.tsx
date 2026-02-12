@@ -42,7 +42,7 @@ export default function CommunityPage() {
     try {
       const params =
         sort === "popular"
-          ? ({ type: "created_at", order: "desc", page: 1 } as const)
+          ? ({ type: "rating", order: "desc", page: 1 } as const)
           : ({ type: "created_at", order: "desc", page: 1 } as const);
 
       const data = await getCommunityReviewList(params);

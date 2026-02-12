@@ -4,8 +4,8 @@
 import axios from "axios";
 import { Heart, MessageCircle, Share2 } from "lucide-react";
 import Image from "next/image";
-import { useState } from "react";
-import { deleteReview } from "@/api/reviews";
+import { useState, useEffect } from "react";
+import { deleteReview, getReviewCommentCount, toggleReviewLike } from "@/api/reviews";
 import CommentsDialog from "@/app/community/CommentDialog";
 import ShareDialog from "@/app/community/ShareDialog";
 import EditReviewDialog, { type BackendReviewItem } from "@/app/community/EditReviewDialog";
@@ -32,6 +32,7 @@ export default function PostCard({ post }: { post: BackendReviewItem }) {
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [commentCount, setCommentCount] = useState<number>(0);
 
   // 로컬 반영용
   const [localPost, setLocalPost] = useState<BackendReviewItem>(post);
@@ -42,12 +43,32 @@ export default function PostCard({ post }: { post: BackendReviewItem }) {
   const me = getUser?.();
   const isMine = me?.user_id != null && String(me.user_id) === String(localPost.user.id);
 
-  const handleToggleLike = () => {
-    setLiked((prev) => {
-      setLikeCount((c) => (prev ? c - 1 : c + 1));
-      return !prev;
-    });
-  };
+    const handleToggleLike = async () => {
+      // ✅ 낙관적 업데이트(즉시 반응)
+      const prevLiked = liked;
+      const prevCount = likeCount;
+
+      const nextLiked = !prevLiked;
+      setLiked(nextLiked);
+      setLikeCount(prevCount + (nextLiked ? 1 : -1));
+
+      try {
+        const data: any = await toggleReviewLike(localPost.id);
+
+        // ✅ 서버가 최신값을 내려주면 그걸로 동기화
+        const serverLiked = data?.is_liked;
+        const serverCount = data?.like_users_count ?? data?.like_count;
+
+        if (typeof serverLiked === "boolean") setLiked(serverLiked);
+        if (typeof serverCount === "number") setLikeCount(serverCount);
+      } catch {
+        // ❌ 실패하면 롤백
+        setLiked(prevLiked);
+        setLikeCount(prevCount);
+        alert("좋아요 처리에 실패했습니다.");
+      }
+    };
+
 
   const handleDelete = async () => {
     const ok = confirm("정말 삭제할까요?");
@@ -64,6 +85,21 @@ export default function PostCard({ post }: { post: BackendReviewItem }) {
       alert("삭제에 실패했습니다.");
     }
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const cnt = await getReviewCommentCount(localPost.id);
+        if (!cancelled) setCommentCount(cnt);
+      } catch {
+        if (!cancelled) setCommentCount(0);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [localPost.id]);
 
   return (
     <>
@@ -121,7 +157,8 @@ export default function PostCard({ post }: { post: BackendReviewItem }) {
                   onClick={() => setCommentsOpen(true)}
                   className="gap-2 text-zinc-400 hover:text-zinc-200"
                 >
-                  <MessageCircle className="h-4 w-4" />0
+                  <MessageCircle className="h-4 w-4" />
+                  {commentCount}
                 </Button>
 
                 <Button
@@ -157,7 +194,12 @@ export default function PostCard({ post }: { post: BackendReviewItem }) {
         </div>
       </Card>
 
-      <CommentsDialog open={commentsOpen} onOpenChange={setCommentsOpen} postId={localPost.id} />
+      <CommentsDialog
+        open={commentsOpen}
+        onOpenChange={setCommentsOpen}
+        postId={localPost.id}
+        onCommentCreated={() => setCommentCount((c) => c + 1)} // ✅ 즉시 반영
+      />
       <ShareDialog open={shareOpen} onOpenChange={setShareOpen} postId={localPost.id} />
 
       <EditReviewDialog
