@@ -1,10 +1,4 @@
-<<<<<<< HEAD
-// src/api/auth.ts
-
 import type { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-=======
-import { useRouter } from "next/navigation";
->>>>>>> fe_dev
 import api from "@/lib/authClient";
 import { clearTokens, setTokens } from "@/lib/tokenStorage";
 import { clearUser, setUser } from "@/lib/userStorage";
