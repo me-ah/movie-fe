@@ -19,4 +19,7 @@ urlpatterns = [
 
     # Community (Review) API
     path("api/community/review/", include("community.urls")),
+
+    # Management (Admin) API
+    path("api/admin/", include("management.urls")),
 ]
