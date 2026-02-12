@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "framer-motion";
-import { useAtom, useSetAtom } from "jotai";
+import { useAtom, useSetAtom, type WritableAtom } from "jotai";
 import { Heart, MessageCircle, Play, Share2 } from "lucide-react"; // Play 아이콘 추가
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
@@ -21,7 +21,13 @@ export default function ShortsItem({ movie }: { movie: ShortsMovie }) {
 	const [_shortsList, setShortsList] = useAtom(shortsListAtom);
 	const [isCommentOpen, setIsCommentOpen] = useAtom(isCommentOpenAtom);
 	const setIsShareModalOpen = useSetAtom(isShareModalOpenAtom);
-	const setActiveMovie = useSetAtom<any>(activeMovieAtom);
+	const setActiveMovie = useSetAtom(
+		activeMovieAtom as WritableAtom<
+			ShortsMovie | null,
+			[ShortsMovie | null],
+			void
+		>,
+	);
 	const playerRef = useRef<YouTubePlayer | null>(null);
 	const [isPlaying, setIsPlaying] = useState(false);
 	const [isReady, setIsReady] = useState(false);
