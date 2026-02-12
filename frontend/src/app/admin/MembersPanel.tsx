@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { type AdminUserItem, getAdminUserList } from "@/api/admin";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import AddMemberDialog from "./AddMemberDialog";
 
 type Member = {
 	no: number;
@@ -52,31 +53,22 @@ export default function MembersPanel() {
 	const [loading, setLoading] = useState(false);
 	const [err, setErr] = useState<string | null>(null);
 
-	useEffect(() => {
-		let mounted = true;
-
-		async function fetchUsers() {
-			setLoading(true);
-			setErr(null);
-			try {
-				const data = await getAdminUserList(); // ✅ 배열로 옴
-				if (!mounted) return;
-				setRawUsers(Array.isArray(data) ? data : []);
-			} catch {
-				if (!mounted) return;
-				setErr("회원 목록을 불러오지 못했습니다.");
-			} finally {
-				if (mounted) {
-					setLoading(false);
-				}
-			}
+	const fetchUsers = useCallback(async () => {
+		setLoading(true);
+		setErr(null);
+		try {
+			const data = await getAdminUserList();
+			setRawUsers(Array.isArray(data) ? data : []);
+		} catch {
+			setErr("회원 목록을 불러오지 못했습니다.");
+		} finally {
+			setLoading(false);
 		}
-
-		fetchUsers();
-		return () => {
-			mounted = false;
-		};
 	}, []);
+
+	useEffect(() => {
+		fetchUsers();
+	}, [fetchUsers]);
 
 	const totalPages = useMemo(() => {
 		return Math.max(1, Math.ceil(rawUsers.length / pageSize));
@@ -125,9 +117,7 @@ export default function MembersPanel() {
 						</div>
 
 						<div className="flex items-center gap-2">
-							<Button className="bg-blue-500 hover:bg-blue-600">
-								회원 추가
-							</Button>
+							<AddMemberDialog onSuccess={fetchUsers} />
 						</div>
 					</div>
 				</div>

@@ -123,6 +123,20 @@ export type AdminUserItem = {
 export type AdminUserListResponse = AdminUserItem[];
 
 export async function getAdminUserList() {
-	const res = await api.get<AdminUserListResponse>("/admin/accounts");
+	const res = await api.get<AdminUserListResponse>("/admin/accounts/");
+	return res.data;
+}
+
+export type CreateAdminUserParams = {
+	username: string;
+	password?: string;
+	email: string;
+	first_name: string;
+	last_name: string;
+	login_type: "email"; // Fixed based on request example
+};
+
+export async function createAdminUser(data: CreateAdminUserParams) {
+	const res = await api.post<AdminUserItem>("/admin/accounts/", data);
 	return res.data;
 }
