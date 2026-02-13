@@ -55,16 +55,28 @@ export default function MovieReviewCreateDialog({
 		if (rating.trim() !== "") {
 			const n = Number(rating);
 			if (!Number.isFinite(n) || n < 0 || n > 10) {
-				setFormError("평점은 0 ~ 10 사이 숫자로 입력해줘. (비워도 됨)");
+				setFormError("평점은 0 ~ 10 사이 숫자로 입력해줘.");
 				return;
 			}
 			parsedRating = n;
 		}
 
-		await onSubmit({
-			content: trimmed,
-			...(parsedRating != null ? { rating: parsedRating } : {}),
-		});
+		try {
+			await onSubmit({
+				content: trimmed,
+				...(parsedRating != null ? { rating: parsedRating } : {}),
+			});
+		} catch (err: unknown) {
+			let message = "리뷰 작성 실패";
+
+			if (err instanceof Error) {
+				message = err.message;
+			} else if (typeof err === "string") {
+				message = err;
+			}
+
+			setFormError(message);
+		}
 	};
 
 	return (

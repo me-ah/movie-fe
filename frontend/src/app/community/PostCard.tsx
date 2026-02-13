@@ -59,7 +59,6 @@ export default function PostCard({ post }: { post: BackendReviewItem }) {
 		me?.user_id != null && String(me.user_id) === String(localPost.user.id);
 
 	const handleToggleLike = async () => {
-
 		const prevLiked = liked;
 		const prevCount = likeCount;
 
@@ -70,7 +69,6 @@ export default function PostCard({ post }: { post: BackendReviewItem }) {
 		try {
 			const data = (await toggleReviewLike(localPost.id)) as ToggleLikeResponse;
 
-			
 			const serverLiked = data?.is_liked;
 			const serverCount = data?.like_users_count ?? data?.like_count;
 
@@ -131,7 +129,7 @@ export default function PostCard({ post }: { post: BackendReviewItem }) {
 					<div className="flex-1">
 						<div className="flex items-center justify-between gap-4">
 							<div>
-								<div className="font-semibold">{localPost.user.username}</div>
+								<div className="font-semibold">{localPost.user.last_name}{localPost.user.first_name}</div>
 							</div>
 							<div className="text-sm text-zinc-500">
 								{new Date(localPost.created_at).toLocaleString("ko-KR", {
@@ -142,9 +140,7 @@ export default function PostCard({ post }: { post: BackendReviewItem }) {
 
 						<div className="mt-4 flex items-start gap-4">
 							<div>
-								<div className="text-xl font-semibold">
-									{localPost.title}
-								</div>
+								<div className="text-xl font-semibold">{localPost.title}</div>
 								<Stars value={Math.round((localPost.rank ?? 0) / 2)} />
 							</div>
 						</div>
