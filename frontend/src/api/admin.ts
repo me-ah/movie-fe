@@ -1,4 +1,3 @@
-// src/api/admin.ts
 import api from "@/lib/apiClient";
 
 export type AdminReviewUser = {
@@ -89,6 +88,7 @@ export type AdminMovieListResponse = {
 
 export type AdminMovieListParams = {
 	page?: number;
+	page_size?: number;
 	search?: string;
 	genre?: string;
 	year?: number | string;
@@ -98,7 +98,7 @@ export type AdminMovieListParams = {
 };
 
 export async function getAdminMovieList(params?: AdminMovieListParams) {
-	const res = await api.get<AdminMovieListResponse>("/api/admin/movie/list", {
+	const res = await api.get<AdminMovieListResponse>("/admin/movies", {
 		params,
 	});
 	return res.data;
@@ -133,7 +133,7 @@ export type CreateAdminUserParams = {
 	email: string;
 	first_name: string;
 	last_name: string;
-	login_type: "email"; // Fixed based on request example
+	login_type: "email";
 };
 
 export async function createAdminUser(data: CreateAdminUserParams) {
@@ -203,4 +203,57 @@ export async function updateAdminUser(id: number, data: UpdateAdminUserParams) {
 
 export async function deleteAdminUser(id: number) {
 	await api.delete(`/admin/accounts/${id}/`);
+}
+
+export type AdminMovieDetail = {
+	id: number;
+	movie_id: string;
+	title: string;
+	youtube_key: string;
+	embed_url: string;
+	release_date: string;
+	vote_average: number;
+	star_rating: number;
+	review_average: number;
+	ott_providers: string;
+	is_in_theaters: boolean;
+	overview: string;
+	poster_path: string;
+	view_count: number;
+	like_count: number;
+	updated_at: string;
+	created_at: string;
+	genres: number[];
+};
+
+export async function getAdminMovieDetail(id: number) {
+	const res = await api.get<AdminMovieDetail>(`/admin/movies/${id}`);
+	return res.data;
+}
+
+export type UpdateAdminMovieParams = {
+	movie_id?: string;
+	title?: string;
+	youtube_key?: string;
+	embed_url?: string;
+	release_date?: string;
+	vote_average?: number;
+	star_rating?: number;
+	review_average?: number;
+	ott_providers?: string;
+	is_in_theaters?: boolean;
+	overview?: string;
+	poster_path?: string;
+	view_count?: number;
+	like_count?: number;
+	genres?: number[];
+	[key: string]: unknown;
+};
+
+export async function updateAdminMovie(
+	id: number,
+	data: UpdateAdminMovieParams,
+) {
+	const res = await api.patch<AdminMovieDetail>(`/admin/movies/${id}/`, data);
+	return res.data;
 }
