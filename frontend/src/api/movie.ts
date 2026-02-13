@@ -1,4 +1,5 @@
 import api from "@/lib/apiClient";
+import { apiClient } from "./shortsMovie";
 
 export type MovieDetail = {
 	overview?: string;
@@ -33,6 +34,7 @@ export type MoviePageResponse = {
 	title: string;
 	rank?: string | number;
 	year?: string | number;
+	movie_id?: string | number;
 	runtime?: string | number;
 	ott_list?: string[];
 
@@ -73,3 +75,10 @@ export async function getMoviePage(
 export const movieApi = {
 	getMoviePage,
 };
+
+
+export async function toggleShortLike(
+  movie_id: string | number
+): Promise<void> {
+  await api.post(`/movies/shorts/${movie_id}/like/`);
+}

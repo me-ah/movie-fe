@@ -10,6 +10,7 @@ import MovieReviewCreateDialog from "./MovieReviewCreateDialog";
 export type ReviewItem = {
 	id: string | number;
 	author: string;
+	user: string;
 	rating?: number;
 	content: string;
 	createdAt?: string;
@@ -50,6 +51,7 @@ export default function MovieReviewsTab({
 			return;
 		}
 		const data = await getMovieReviews(normalizedMovieId);
+		console.log(data)
 		setReviews(data);
 	}
 
@@ -136,7 +138,7 @@ export default function MovieReviewsTab({
 					>
 						<div className="flex items-center justify-between">
 							<div className="text-sm font-medium text-zinc-100">
-								{r.author}
+								{r.user}
 							</div>
 							<div className="text-xs text-zinc-400">
 								{r.createdAt

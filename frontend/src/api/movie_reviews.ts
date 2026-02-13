@@ -5,6 +5,7 @@ export type ReviewItem = {
 	id: string | number;
 	author: string;
 	rating?: number;
+	user?: string;
 	content: string;
 	createdAt?: string;
 };
@@ -12,7 +13,7 @@ export type ReviewItem = {
 export type BackendReview = {
 	id?: string | number;
 	author?: string;
-	username?: string;
+	rname?: string;
 	user?: string;
 	rating?: number;
 	content?: string;
@@ -23,7 +24,8 @@ export type BackendReview = {
 function toReviewItem(r: BackendReview): ReviewItem {
 	return {
 		id: r.id ?? crypto.randomUUID(),
-		author: r.author ?? r.username ?? r.user ?? "익명",
+		author: r.author ?? "익명",
+		user: r.user,
 		rating: r.rating ?? undefined,
 		content: (r.content ?? "").toString(),
 		createdAt: r.created_at ?? r.createdAt ?? undefined,
@@ -58,7 +60,7 @@ export async function createMovieReview(
 ): Promise<ReviewItem> {
 	try {
 		const res = await api.post<BackendReview>("/home/review/", {
-			id: Number(movieId),
+			movie_id: Number(movieId),
 			...payload,
 		});
 
