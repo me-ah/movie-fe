@@ -47,7 +47,6 @@ export async function getMyPage(payload: GetMyPagePayload) {
 		"/accounts/mypage/",
 		payload,
 	);
-
 	return res.data;
 }
 
