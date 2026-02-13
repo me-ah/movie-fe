@@ -59,6 +59,7 @@ class MovieDetailResponseSerializer(serializers.Serializer):
     poster = serializers.URLField()
     runtime = serializers.CharField(allow_null=True)
     ott_list = serializers.ListField(child=serializers.CharField())
+    is_liked = serializers.BooleanField(help_text="현재 유저의 좋아요 여부")
     MovieDetail = serializers.DictField()
     ReviewItem = ReviewSerializer(many=True)
     recommend_list = MovieMiniSerializer(many=True)
