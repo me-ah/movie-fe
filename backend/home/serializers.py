@@ -28,18 +28,17 @@ class MovieMiniSerializer(serializers.Serializer):
         }
 
 class ReviewSerializer(serializers.ModelSerializer):
-    """리뷰 조회용 (작성자 이름 통합)"""
+    """리뷰 조회용 (아이디 + 이름 통합)"""
+    author = serializers.ReadOnlyField(source='author.username')
     name = serializers.SerializerMethodField()
     createdAt = serializers.DateTimeField(source='created_at', format='%Y-%m-%dT%H:%M:%SZ')
 
     class Meta:
         model = MovieReview
-        fields = ['id', 'name', 'rating', 'content', 'createdAt']
+        fields = ['id', 'author', 'name', 'rating', 'content', 'createdAt']
 
     def get_name(self, obj):
-        # first_name + last_name 조합 (공백 없이 합침)
-        full_name = f"{obj.author.last_name}{obj.author.first_name}".strip()
-        # 성/이름 정보가 없으면 username 반환
+        full_name = f"{obj.author.first_name}{obj.author.last_name}".strip()
         return full_name if full_name else obj.author.username
 
 class ReviewCreateSerializer(serializers.ModelSerializer):
