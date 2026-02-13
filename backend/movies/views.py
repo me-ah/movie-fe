@@ -35,6 +35,10 @@ def get_shorts_list(user, cursor_idx, page_size=10):
     """
     cache_key = f"shorts_playlist:{user.id}"
     
+    # 새로고침(커서 0) 시 기존 플레이리스트 캐시 삭제하여 신선함 유지
+    if cursor_idx == 0:
+        r.delete(cache_key)
+    
     # Redis에서 현재 플레이리스트 가져오기
     playlist = r.lrange(cache_key, 0, -1)
     

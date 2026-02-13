@@ -83,7 +83,8 @@ class UserDataSerializer(serializers.Serializer):
     firstname = serializers.CharField(source='first_name')
     lastname = serializers.CharField(source='last_name')
     onboarding = serializers.BooleanField(source='is_onboarding_completed')
-    login_type = serializers.CharField() # 이 필드를 추가합니다.
+    login_type = serializers.CharField()
+    is_superuser = serializers.BooleanField() # 슈퍼유저 여부 추가
 
 class LoginResponseSerializer(serializers.Serializer):
     message = serializers.CharField()
@@ -96,7 +97,6 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
         username = attrs.get("username")
         password = attrs.get("password")
         
-        # 오직 username과 password로만 인증 시도
         user = authenticate(username=username, password=password)
         
         if not user:
@@ -111,7 +111,9 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 "useremail": user.email,
                 "firstname": user.first_name,
                 "lastname": user.last_name,
-                "onboarding": user.is_onboarding_completed
+                "onboarding": user.is_onboarding_completed,
+                "login_type": user.login_type,
+                "is_superuser": user.is_superuser # 응답 데이터에 추가
             },
             "token": str(refresh.access_token),
             "refresh": str(refresh)
@@ -125,7 +127,7 @@ class MyPageRequestSerializer(serializers.Serializer):
 class UserProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('email', 'first_name', 'last_name') # 온보딩 필드는 절대 포함하지 않음
+        fields = ('email', 'first_name', 'last_name')
         extra_kwargs = {
             'email': {'required': False},
             'first_name': {'required': False},
@@ -133,7 +135,6 @@ class UserProfileUpdateSerializer(serializers.ModelSerializer):
         }
 
     def update(self, instance, validated_data):
-        # 명시적으로 이메일, 성, 이름만 업데이트
         for attr, value in validated_data.items():
             if attr in ['email', 'first_name', 'last_name']:
                 setattr(instance, attr, value)
@@ -147,7 +148,6 @@ class MovieMiniSerializer(serializers.Serializer):
 
 class MyPageResponseSerializer(serializers.Serializer):
     userdata = UserDataSerializer()
-    login_type = serializers.CharField()
     watchtime = serializers.IntegerField()
     usermylist = serializers.IntegerField()
     recordmovie = serializers.DictField(child=serializers.DictField())
@@ -181,4 +181,3 @@ class OnboardingSerializer(serializers.Serializer):
     pref_thriller = serializers.BooleanField(default=False)
     pref_war = serializers.BooleanField(default=False)
     pref_western = serializers.BooleanField(default=False)
-
