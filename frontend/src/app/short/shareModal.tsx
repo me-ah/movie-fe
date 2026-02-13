@@ -20,11 +20,9 @@ export default function ShareModal() {
 	}, [setIsOpen]);
 
 	if (!mounted) return null;
-	const baseUrl =
-		process.env.NEXT_PUBLIC_SITE_URL ||
-		(typeof window !== "undefined" ? window.location.origin : "");
+	const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 	const moviePath = movie?.movie_id || "";
-	const shareUrl = `${baseUrl}/shorts/${moviePath}`;
+	const shareUrl = `${baseUrl}/movies/detail/${moviePath}`;
 
 	const copyLink = async () => {
 		if (!moviePath) {

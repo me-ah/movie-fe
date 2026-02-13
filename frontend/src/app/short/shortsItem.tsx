@@ -266,7 +266,7 @@ export default function ShortsItem({ movie }: { movie: ShortsMovie }) {
 					<div className="flex items-center gap-2 mb-3 pointer-events-auto">
 						<span className="font-bold text-white text-sm">{movie.title}</span>
 						<Link
-							href={`/movies/detail/${movie.movie_id}`}
+							href={`https://movie-fe-iota.vercel.app/movies/detail/${movie.movie_id}`}
 							className="pointer-events-auto bg-white text-black px-3 py-1 rounded-full text-[10px] font-bold ml-2 hover:bg-gray-200 transition-colors inline-block"
 						>
 							상세보기
