@@ -1,3 +1,4 @@
+import axios from "axios";
 import api from "@/lib/apiClient";
 
 export type ReviewItem = {
@@ -55,10 +56,18 @@ export async function createMovieReview(
 	movieId: string | number,
 	payload: CreateReviewPayload,
 ): Promise<ReviewItem> {
-	const res = await api.post<BackendReview>("/home/review/", {
-		id: Number(movieId),
-		...payload,
-	});
+	try {
+		const res = await api.post<BackendReview>("/home/review/", {
+			id: Number(movieId),
+			...payload,
+		});
 
-	return toReviewItem(res.data);
+		return toReviewItem(res.data);
+	} catch (error) {
+		if (axios.isAxiosError(error)) {
+			throw error.response?.data;
+		}
+
+		throw error;
+	}
 }

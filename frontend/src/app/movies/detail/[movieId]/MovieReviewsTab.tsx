@@ -93,8 +93,7 @@ export default function MovieReviewsTab({
 			setOpen(false);
 			await refetchReviews();
 		} catch (e) {
-			console.error("create review failed", e);
-			throw e;
+			throw e.error;
 		} finally {
 			setSubmitting(false);
 		}
