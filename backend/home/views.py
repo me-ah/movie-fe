@@ -87,7 +87,6 @@ class MovieDetailView(views.APIView):
         
         movie = get_object_or_404(Movie, movie_id=tmdb_id)
         
-        # --- 좋아요 여부 체크 추가 ---
         is_liked = False
         if request.user.is_authenticated:
             is_liked = UserLikeList.objects.filter(user=request.user, movie=movie).exists()
@@ -115,7 +114,7 @@ class MovieDetailView(views.APIView):
             "poster": movie.poster_path,
             "runtime": None,
             "ott_list": movie.ott_providers,
-            "is_liked": is_liked, # 상태값 포함
+            "is_liked": is_liked,
             "MovieDetail": {
                 "overview": movie.overview,
                 "director": None,
@@ -128,14 +127,43 @@ class MovieDetailView(views.APIView):
         return Response(response_data, status=status.HTTP_200_OK)
 
 class MovieReviewListView(views.APIView):
-    permission_classes = [IsAuthenticated]
+    """
+    영화 리뷰 목록 조회(GET) 및 작성(POST)
+    """
     serializer_class = ReviewCreateRequestSerializer
-    def post(self, request):
-        tmdb_id = request.data.get('movie_id')
-        if not tmdb_id: return Response({"error": "movie_id (TMDB ID) is required in body"}, status=status.HTTP_400_BAD_REQUEST)
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    @extend_schema(
+        parameters=[OpenApiParameter("id", type=str, description="영화의 고유 TMDB ID", required=True)],
+        responses={200: ReviewSerializer(many=True)}
+    )
+    def get(self, request):
+        """특정 영화의 모든 리뷰 목록 조회"""
+        tmdb_id = request.query_params.get('id')
+        if not tmdb_id:
+            return Response({"error": "Movie ID required (?id=tt12345)"}, status=status.HTTP_400_BAD_REQUEST)
+        
         movie = get_object_or_404(Movie, movie_id=tmdb_id)
+        reviews = movie.reviews.all().select_related('author').order_by('-created_at')
+        serializer = ReviewSerializer(reviews, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(request=ReviewCreateRequestSerializer, responses={201: ReviewSerializer})
+    def post(self, request):
+        """영화 리뷰 작성"""
+        tmdb_id = request.data.get('movie_id')
+        if not tmdb_id:
+            return Response({"error": "movie_id (TMDB ID) is required in body"}, status=status.HTTP_400_BAD_REQUEST)
+            
+        movie = get_object_or_404(Movie, movie_id=tmdb_id)
+        
         if MovieReview.objects.filter(movie=movie, author=request.user).exists():
             return Response({"error": "이미 리뷰를 작성하셨습니다."}, status=status.HTTP_400_BAD_REQUEST)
+            
         serializer = ReviewCreateSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(author=request.user, movie=movie)
@@ -144,8 +172,12 @@ class MovieReviewListView(views.APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class MovieReviewDetailView(views.APIView):
+    """
+    영화 리뷰 수정 및 삭제 API
+    """
     permission_classes = [IsAuthenticated]
     serializer_class = ReviewCreateSerializer
+
     def put(self, request, review_id):
         review = get_object_or_404(MovieReview, id=review_id, author=request.user)
         serializer = ReviewCreateSerializer(review, data=request.data, partial=True)
@@ -154,6 +186,7 @@ class MovieReviewDetailView(views.APIView):
             update_movie_review_average(review.movie)
             return Response(ReviewSerializer(review).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
     def delete(self, request, review_id):
         review = get_object_or_404(MovieReview, id=review_id, author=request.user)
         movie = review.movie
