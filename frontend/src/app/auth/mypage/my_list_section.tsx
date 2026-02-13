@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 
 export type PosterItem = {
 	id: string;
@@ -29,7 +30,11 @@ export default function MyListSection({
 				) : (
 					<div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
 						{items.map((it) => (
-							<div key={it.id} className="group">
+							<Link
+								key={it.id}
+								href={`/movies/detail/${it.id}`}
+								className="group block cursor-pointer"
+							>
 								<div className="relative aspect-[2/3] overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950/40">
 									<Image
 										src={it.posterUrl ?? "/images/poster-placeholder.jpg"}
@@ -39,10 +44,11 @@ export default function MyListSection({
 										sizes="(max-width: 768px) 50vw, 25vw"
 									/>
 								</div>
-								<div className="mt-2 line-clamp-2 text-sm text-zinc-200">
+
+								<div className="mt-2 line-clamp-2 text-sm text-zinc-200 transition-colors group-hover:text-white">
 									{it.title}
 								</div>
-							</div>
+							</Link>
 						))}
 					</div>
 				)}

@@ -145,7 +145,7 @@ export async function getCommunityReviewList(params: ReviewListParams = {}) {
 function isCommentListResponse(x: unknown): x is ReviewCommentListResponse {
 	if (!x || typeof x !== "object") return false;
 	const o = x as { count?: unknown; results?: unknown };
-	return typeof o.count === "number" && Arary.isArray(o.results);
+	return typeof o.count === "number" && Array.isArray(o.results);
 }
 
 function normalizeComments(data: unknown): ReviewComment[] {

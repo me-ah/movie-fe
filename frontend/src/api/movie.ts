@@ -1,5 +1,4 @@
 import api from "@/lib/apiClient";
-import { apiClient } from "./shortsMovie";
 
 export type MovieDetail = {
 	overview?: string;
@@ -37,6 +36,7 @@ export type MoviePageResponse = {
 	movie_id?: string | number;
 	runtime?: string | number;
 	ott_list?: string[];
+	is_like?: boolean;
 
 	MovieDetail?: MovieDetail;
 	ActorItem?: ActorItem | ActorItem[];
@@ -64,7 +64,7 @@ export async function getMoviePage(
 	});
 
 	const data = res.data;
-
+	console.log(data);
 	return {
 		...data,
 		actors: asArray<ActorItem>(data.ActorItem),
@@ -76,9 +76,8 @@ export const movieApi = {
 	getMoviePage,
 };
 
-
 export async function toggleShortLike(
-  movie_id: string | number
+	movie_id: string | number,
 ): Promise<void> {
-  await api.post(`/movies/shorts/${movie_id}/like/`);
+	await api.post(`/movies/shorts/${movie_id}/like/`);
 }
