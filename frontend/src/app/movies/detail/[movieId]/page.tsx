@@ -7,5 +7,5 @@ export default async function Page({
 }) {
 	const { movieId } = await params;
 
-	return <MovieDetailClient movieId={movieId} />;
+	return <MovieDetailClient movieId={movieId} key={movieId} />;
 }
