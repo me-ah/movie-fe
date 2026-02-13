@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import {
 	type AdminUserDetail,
@@ -26,6 +26,8 @@ type EditMemberDialogProps = {
 	onUserUpdated: () => void;
 };
 
+const NON_MODIFIABLE_FIELDS: string[] = [];
+
 export default function EditMemberDialog({
 	user,
 	onUserUpdated,
@@ -35,7 +37,8 @@ export default function EditMemberDialog({
 	const {
 		register,
 		handleSubmit,
-		formState: { isSubmitting },
+		reset,
+		formState: { isSubmitting, dirtyFields },
 	} = useForm<UpdateAdminUserParams>({
 		defaultValues: {
 			email: user.email,
@@ -52,17 +55,65 @@ export default function EditMemberDialog({
 		},
 	});
 
+	useEffect(() => {
+		if (open) {
+			reset({
+				email: user.email,
+				first_name: user.first_name,
+				last_name: user.last_name,
+				is_staff: user.is_staff,
+				is_active: user.is_active,
+				is_onboarding_completed: user.is_onboarding_completed,
+				...Object.fromEntries(
+					Object.entries(user)
+						.filter(([key]) => key.startsWith("pref_"))
+						.map(([key, val]) => [key, val]),
+				),
+			});
+		}
+	}, [open, user, reset]);
+
 	const onSubmit = async (data: UpdateAdminUserParams) => {
 		try {
-			// 숫자형 필드 변환 (preferences)
-			const formattedData = { ...data };
-			Object.keys(formattedData).forEach((key) => {
+			const changedFields = Object.keys(dirtyFields) as Array<
+				keyof UpdateAdminUserParams
+			>;
+
+			const isInvalidModification = changedFields.some((field) =>
+				NON_MODIFIABLE_FIELDS.includes(String(field)),
+			);
+
+			if (isInvalidModification) {
+				toast({
+					variant: "destructive",
+					title: "수정 불가",
+					description: "수정이 불가한 항목입니다.",
+				});
+				return;
+			}
+
+			if (changedFields.length === 0) {
+				toast({
+					title: "변경 사항 없음",
+					description: "수정된 정보가 없습니다.",
+				});
+				setOpen(false);
+				return;
+			}
+
+			const changedData: UpdateAdminUserParams = {};
+			changedFields.forEach((field) => {
+				const value = data[field];
+				changedData[field] = value;
+			});
+
+			Object.keys(changedData).forEach((key) => {
 				if (key.startsWith("pref_")) {
-					formattedData[key] = Number(formattedData[key]);
+					changedData[key] = Number(changedData[key]);
 				}
 			});
 
-			await updateAdminUser(user.id, formattedData);
+			await updateAdminUser(user.id, changedData);
 			toast({
 				title: "수정 성공",
 				description: "회원 정보가 수정되었습니다.",
