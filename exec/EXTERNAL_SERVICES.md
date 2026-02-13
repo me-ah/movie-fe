@@ -10,14 +10,14 @@ MEAH 프로젝트에서 사용되는 외부 서비스들의 계정 정보 및 �
 ## 2. Kakao Developers (소셜 로그인)
 - **용도:** 카카오 계정을 이용한 간편 가입 및 로그인
 - **설정값:**
-  - REST API 키: 85937b0b11cf339cbae9b95cb8d9dd6a
-  - Redirect URI: `https://movie-fe-iota.vercel.app/api/kakao/callback`
+  - REST API 키
+  - Redirect URI
 
 ## 3. Google Cloud Console (소셜 로그인)
 - **용도:** 구글 계정을 이용한 간편 가입 및 로그인
-- **클라이언트 ID:** 1089177366280-c759fqjjf0j1a1rnq3vpobu0jfup3tmk.apps.googleusercontent.com
+- **클라이언트 ID:** 
 - **설정값:**
-  - Redirect URI: `https://movie-fe-iota.vercel.app/api/google/callback`
+  - Redirect URI: 
 
 ## 4. Docker Hub
 - **용도:** 백엔드 이미지 배포 및 관리
