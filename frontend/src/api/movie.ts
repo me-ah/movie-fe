@@ -36,6 +36,7 @@ export type MoviePageResponse = {
 	movie_id?: string | number;
 	runtime?: string | number;
 	ott_list?: string[];
+	is_like?: boolean;
 
 	MovieDetail?: MovieDetail;
 	ActorItem?: ActorItem | ActorItem[];
@@ -63,7 +64,7 @@ export async function getMoviePage(
 	});
 
 	const data = res.data;
-
+	console.log(data);
 	return {
 		...data,
 		actors: asArray<ActorItem>(data.ActorItem),

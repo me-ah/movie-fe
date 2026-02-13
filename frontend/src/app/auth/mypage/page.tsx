@@ -141,9 +141,10 @@ export default function MyPage() {
 	);
 
 	const displayName = useMemo(() => {
-		const full = `${userView.firstname}${userView.lastname}`.trim();
+		const full = `${userView.lastname}`.trim();
 		return full || userView.username || "Unknown";
-	}, [userView.firstname, userView.lastname, userView.username]);
+	}, [userView.lastname, userView.username]);
+
 	const time = formatWatchTime(userView.stats.watchtime);
 
 	return (
@@ -230,7 +231,7 @@ export default function MyPage() {
 					emptyText="시청기록이 없습니다."
 				/>
 				<MyListSection
-					title="찜한 리스트"
+					title="좋아요 리스트"
 					items={myListItems}
 					emptyText="찜한 콘텐츠가 없습니다."
 				/>

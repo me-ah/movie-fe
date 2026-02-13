@@ -11,10 +11,11 @@ export type LoginResponse = {
 		useremail: string;
 		firstname: string;
 		lastname: string;
+		is_superuser: boolean;
+		onboarding: boolean;
 	};
 	token: string;
 	refresh: string;
-	onboding: boolean;
 };
 
 export type SignupRequest = {
@@ -24,6 +25,8 @@ export type SignupRequest = {
 	password_confirm: string;
 	first_name: string;
 	last_name: string;
+
+	user_superuser?: boolean; // ✅ optional 로
 };
 
 export async function login(username: string, password: string) {
@@ -36,10 +39,10 @@ export async function login(username: string, password: string) {
 
 	setUser({
 		user_id: user.userid,
+		user_superuser: user.is_superuser,
 	});
 
 	setTokens(token, refresh);
-
 	return res.data;
 }
 
