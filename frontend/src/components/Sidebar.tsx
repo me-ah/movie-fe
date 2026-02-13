@@ -1,6 +1,6 @@
 "use client";
 
-import { Film, Home, SquarePlay, User, Users, Shield  } from "lucide-react";
+import { Film, Home, Shield, SquarePlay, User, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
