@@ -8,6 +8,7 @@ venv/
 build/
 dist/
 .python-version
+.uv/
 
 # --- Django ---
 db.sqlite3
@@ -15,6 +16,7 @@ db.sqlite3-journal
 staticfiles/
 media/
 .env
+.env.local
 
 # --- OS & IDE ---
 .DS_Store
@@ -22,9 +24,12 @@ media/
 .vscode/
 *.swp
 *.bak
+*.tmp
+*~
 
 # --- Log & Temp ---
 *.log
+**/*.log
 .cache/
 .pytest_cache/
 .mypy_cache/
@@ -33,13 +38,20 @@ media/
 # --- Docker ---
 .docker/
 docker-compose.override.yml
+nginx/nginx.local.conf
+scripts/compose-up-local.sh
 
-# --- Data --- 26/02/09 20:14 두진 추가
+# --- Data & Generated ---
 movie_data/
 *.mp4
 *.ts
+PROJECT_SUMMARY.md
 
 # --- Project Specific ---
+localtype/
 # 만약 미디어 파일이나 정적 파일 폴더 구조만 유지하고 싶다면 아래 주석을 해제하세요
 # !staticfiles/.gitkeep
 # !media/.gitkeep
+certs/
+docker-compose.override.yml
+
