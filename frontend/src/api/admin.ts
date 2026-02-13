@@ -1,4 +1,3 @@
-// src/api/admin.ts
 import api from "@/lib/apiClient";
 
 export type AdminReviewUser = {
@@ -133,7 +132,7 @@ export type CreateAdminUserParams = {
 	email: string;
 	first_name: string;
 	last_name: string;
-	login_type: "email"; // Fixed based on request example
+	login_type: "email";
 };
 
 export async function createAdminUser(data: CreateAdminUserParams) {

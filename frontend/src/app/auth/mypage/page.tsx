@@ -20,7 +20,7 @@ type MyPageUser = {
 	useremail: string;
 	firstname: string;
 	lastname: string;
-	login_type: string; 
+	login_type: string;
 	stats: {
 		watchtime: number;
 		usermylist: number;
@@ -62,7 +62,6 @@ function formatWatchTime(totalSeconds: number) {
 	return { hours, minutes, seconds };
 }
 
-
 function normalize(data: BackendMyPageResponse) {
 	const u = data.userdata;
 
@@ -72,7 +71,7 @@ function normalize(data: BackendMyPageResponse) {
 		useremail: u.useremail ?? "",
 		firstname: u.firstname ?? "",
 		lastname: u.lastname ?? "",
-		login_type: data.login_type ?? "", 
+		login_type: data.login_type ?? "",
 		stats: {
 			watchtime: toNumber(data.watchtime, 0),
 			usermylist: toNumber(data.usermylist, 0),
@@ -86,7 +85,6 @@ function normalize(data: BackendMyPageResponse) {
 	};
 }
 
-
 export default function MyPage() {
 	const [user, setUser] = useState<MyPageUser | null>(null);
 	const [recordItems, setRecordItems] = useState<PosterItem[]>([]);
@@ -97,9 +95,9 @@ export default function MyPage() {
 	const handleLogout = () => {
 		clearTokens();
 		clearUser();
-		router.replace("/auth"); 
+		router.replace("/auth");
 	};
-	
+
 	useEffect(() => {
 		let cancelled = false;
 
@@ -140,9 +138,8 @@ export default function MyPage() {
 				stats: { watchtime: 0, usermylist: 0 },
 			},
 		[user],
-	);	
+	);
 
-	
 	const displayName = useMemo(() => {
 		const full = `${userView.firstname}${userView.lastname}`.trim();
 		return full || userView.username || "Unknown";
@@ -190,15 +187,15 @@ export default function MyPage() {
 							</Button>
 
 							{userView.login_type === "email" && (
-							<Button
-								type="button"
-								variant="secondary"
-								onClick={() => setPwOpen(true)}
-								className="h-11 rounded-xl bg-zinc-800/70 text-zinc-100 hover:bg-zinc-800 border border-zinc-700"
-							>
-								<KeyRound className="mr-2 h-4 w-4" />
-								비밀번호 변경
-							</Button>
+								<Button
+									type="button"
+									variant="secondary"
+									onClick={() => setPwOpen(true)}
+									className="h-11 rounded-xl bg-zinc-800/70 text-zinc-100 hover:bg-zinc-800 border border-zinc-700"
+								>
+									<KeyRound className="mr-2 h-4 w-4" />
+									비밀번호 변경
+								</Button>
 							)}
 
 							<Button
