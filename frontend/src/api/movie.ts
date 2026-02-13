@@ -33,8 +33,10 @@ export type MoviePageResponse = {
 	title: string;
 	rank?: string | number;
 	year?: string | number;
+	movie_id?: string | number;
 	runtime?: string | number;
 	ott_list?: string[];
+	is_like?: boolean;
 
 	MovieDetail?: MovieDetail;
 	ActorItem?: ActorItem | ActorItem[];
@@ -62,7 +64,7 @@ export async function getMoviePage(
 	});
 
 	const data = res.data;
-
+	console.log(data);
 	return {
 		...data,
 		actors: asArray<ActorItem>(data.ActorItem),
@@ -73,3 +75,9 @@ export async function getMoviePage(
 export const movieApi = {
 	getMoviePage,
 };
+
+export async function toggleShortLike(
+	movie_id: string | number,
+): Promise<void> {
+	await api.post(`/movies/shorts/${movie_id}/like/`);
+}

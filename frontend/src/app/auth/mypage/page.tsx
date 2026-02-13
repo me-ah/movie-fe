@@ -1,13 +1,16 @@
 "use client";
 
-import { Clock, Heart, Settings } from "lucide-react";
+import { Clock, Heart, KeyRound, LogOut, Settings } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { type BackendMyPageResponse, getMyPage } from "@/api/user";
 import EditModal from "@/app/auth/mypage/edit_modal";
 import { Button } from "@/components/ui/button";
-import { getUser } from "@/lib/userStorage";
+import { clearTokens } from "@/lib/tokenStorage";
+import { clearUser, getUser } from "@/lib/userStorage";
+import ChangePasswordDialog from "./ChangePasswordDialog";
 import MyListSection, { type PosterItem } from "./my_list_section";
 import StatCard from "./my_statcard";
 
@@ -17,6 +20,7 @@ type MyPageUser = {
 	useremail: string;
 	firstname: string;
 	lastname: string;
+	login_type: string;
 	stats: {
 		watchtime: number;
 		usermylist: number;
@@ -50,6 +54,14 @@ function mapMyListMovie(
 	}));
 }
 
+function formatWatchTime(totalSeconds: number) {
+	const hours = Math.floor(totalSeconds / 3600);
+	const minutes = Math.floor((totalSeconds % 3600) / 60);
+	const seconds = totalSeconds % 60;
+
+	return { hours, minutes, seconds };
+}
+
 function normalize(data: BackendMyPageResponse) {
 	const u = data.userdata;
 
@@ -59,6 +71,7 @@ function normalize(data: BackendMyPageResponse) {
 		useremail: u.useremail ?? "",
 		firstname: u.firstname ?? "",
 		lastname: u.lastname ?? "",
+		login_type: data.login_type ?? "",
 		stats: {
 			watchtime: toNumber(data.watchtime, 0),
 			usermylist: toNumber(data.usermylist, 0),
@@ -77,6 +90,13 @@ export default function MyPage() {
 	const [recordItems, setRecordItems] = useState<PosterItem[]>([]);
 	const [myListItems, setMyListItems] = useState<PosterItem[]>([]);
 	const [settingsOpen, setSettingsOpen] = useState(false);
+	const router = useRouter();
+	const [pwOpen, setPwOpen] = useState(false);
+	const handleLogout = () => {
+		clearTokens();
+		clearUser();
+		router.replace("/auth");
+	};
 
 	useEffect(() => {
 		let cancelled = false;
@@ -114,15 +134,18 @@ export default function MyPage() {
 				useremail: "",
 				firstname: "",
 				lastname: "",
+				login_type: "",
 				stats: { watchtime: 0, usermylist: 0 },
 			},
 		[user],
 	);
 
 	const displayName = useMemo(() => {
-		const full = `${userView.firstname}${userView.lastname}`.trim();
+		const full = `${userView.lastname}`.trim();
 		return full || userView.username || "Unknown";
-	}, [userView.firstname, userView.lastname, userView.username]);
+	}, [userView.lastname, userView.username]);
+
+	const time = formatWatchTime(userView.stats.watchtime);
 
 	return (
 		<div className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -163,6 +186,28 @@ export default function MyPage() {
 								<Settings className="mr-2 h-4 w-4" />
 								Settings
 							</Button>
+
+							{userView.login_type === "email" && (
+								<Button
+									type="button"
+									variant="secondary"
+									onClick={() => setPwOpen(true)}
+									className="h-11 rounded-xl bg-zinc-800/70 text-zinc-100 hover:bg-zinc-800 border border-zinc-700"
+								>
+									<KeyRound className="mr-2 h-4 w-4" />
+									비밀번호 변경
+								</Button>
+							)}
+
+							<Button
+								type="button"
+								variant="secondary"
+								onClick={handleLogout}
+								className="h-11 rounded-xl bg-red-900/40 text-red-300 hover:bg-red-900/60 border border-red-800"
+							>
+								<LogOut className="mr-2 h-4 w-4" />
+								Logout
+							</Button>
 						</div>
 					</div>
 				</section>
@@ -171,7 +216,7 @@ export default function MyPage() {
 					<StatCard
 						icon={<Clock className="h-5 w-5 text-red-500" />}
 						label="Watch Time"
-						value={`${userView.stats.watchtime} hrs`}
+						value={`${time.hours}h ${time.minutes}m`}
 					/>
 					<StatCard
 						icon={<Heart className="h-5 w-5 text-red-500" />}
@@ -186,7 +231,7 @@ export default function MyPage() {
 					emptyText="시청기록이 없습니다."
 				/>
 				<MyListSection
-					title="찜한 리스트"
+					title="좋아요 리스트"
 					items={myListItems}
 					emptyText="찜한 콘텐츠가 없습니다."
 				/>
@@ -208,6 +253,7 @@ export default function MyPage() {
 				}}
 				onWithdraw={() => setSettingsOpen(false)}
 			/>
+			<ChangePasswordDialog open={pwOpen} onOpenChange={setPwOpen} />
 		</div>
 	);
 }

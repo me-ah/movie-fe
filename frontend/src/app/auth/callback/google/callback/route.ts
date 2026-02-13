@@ -123,6 +123,11 @@ export async function GET(req: Request) {
 	const data = await backendRes.json();
 	const accessToken = (data.token ?? data.access) as string | undefined;
 	const refreshToken = (data.refresh ?? data.refresh) as string | undefined;
+	const userId = data.user?.userid;
+	const isonboarding = data.user?.onboarding;
+	const isSuperuser = (data.user?.is_superuser ??
+		data.user?.isSuperuser ??
+		data.user?.superuser) as boolean | undefined;
 
 	if (!accessToken || !refreshToken) {
 		return NextResponse.redirect(`${appUrl}/auth?error=missing_app_tokens`);
@@ -131,6 +136,9 @@ export async function GET(req: Request) {
 	const redirect = new URL(`${appUrl}/auth/callback`);
 	redirect.searchParams.set("access", accessToken);
 	redirect.searchParams.set("refresh", refreshToken);
+	redirect.searchParams.set("userid", String(userId));
+	redirect.searchParams.set("isonboarding", isonboarding);
+	redirect.searchParams.set("is_superuser", String(Boolean(isSuperuser)));
 
 	const res = NextResponse.redirect(redirect.toString());
 	res.cookies.set("oauth_state", "", { path: "/", maxAge: 0 });

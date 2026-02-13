@@ -2,12 +2,14 @@
 
 import { Heart, Play, Share2 } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { movieApi } from "@/api/movie";
+import { movieApi, toggleShortLike } from "@/api/movie";
+import type { ReviewItem } from "@/api/movie_reviews";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import MovieInfoTab from "./MovieInfoTab";
-import MovieReviewsTab, { type ReviewItem } from "./MovieReviewsTab";
+import MovieReviewsTab from "./MovieReviewsTab";
 import MovieShareDialog from "./MovieShareDialog";
 import { parseOttKo } from "./ott";
 import RecommendsRow, {
@@ -24,11 +26,13 @@ type MovieDetail = {
 type MoviePageData = {
 	trailer?: string;
 	title: string;
+	movie_id?: number;
 	rank?: string | number;
 	year?: string | number;
 	poster?: string;
 	runtime?: string | number;
 	ott_list?: string[];
+	is_like?: boolean;
 
 	MovieDetail?: MovieDetail;
 	ReviewItem?: ReviewItem | ReviewItem[];
@@ -71,6 +75,8 @@ function normalizeMoviePageData(data: unknown) {
 		recommend_list: Array.isArray(d.recommend_list)
 			? (d.recommend_list as RecommendRowItem[])
 			: [],
+		movie_id: typeof d.movie_id === "number" ? d.movie_id : undefined,
+		is_like: (d.is_like ?? d.is_liked) as boolean | undefined,
 	};
 
 	return {
@@ -84,8 +90,10 @@ function normalizeMoviePageData(data: unknown) {
 export default function MoviewDetailClient({ movieId }: { movieId: string }) {
 	const [tab, setTab] = useState<TabKey>("info");
 	const [liked, setLiked] = useState(false);
+	const [likeSubmitting, setLikeSubmitting] = useState(false);
 
 	const [currentMovieId, setCurrentMovieId] = useState(movieId);
+	const router = useRouter();
 
 	useEffect(() => {
 		setCurrentMovieId(movieId);
@@ -111,10 +119,12 @@ export default function MoviewDetailClient({ movieId }: { movieId: string }) {
 				const res = await movieApi.getMoviePage(currentMovieId);
 				if (!alive) return;
 
+				console.log(res.movie_id);
 				const final = normalizeMoviePageData(res);
 				setPageData(final.page);
 				setMovieDetail(final.movieDetail);
 				setRecommends(final.recommends);
+				setLiked(Boolean(final.page.is_like));
 
 				setTab("info");
 				window.scrollTo({ top: 0, behavior: "smooth" });
@@ -131,6 +141,24 @@ export default function MoviewDetailClient({ movieId }: { movieId: string }) {
 			alive = false;
 		};
 	}, [currentMovieId]);
+
+	const handleToggleLike = async () => {
+		if (!currentMovieId || likeSubmitting) return;
+
+		setLikeSubmitting(true);
+		const prev = liked;
+
+		setLiked(!prev);
+
+		try {
+			await toggleShortLike(currentMovieId);
+		} catch (e) {
+			setLiked(prev);
+			console.error("toggle like failed", e);
+		} finally {
+			setLikeSubmitting(false);
+		}
+	};
 
 	const metaText = useMemo(() => {
 		if (!pageData) return "";
@@ -238,15 +266,20 @@ export default function MoviewDetailClient({ movieId }: { movieId: string }) {
 
 							<Button
 								variant="secondary"
-								className="border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300"
-								onClick={() => setLiked((v) => !v)}
+								className="border border-zinc-800 bg-zinc-900 hover:bg-zinc-900 text-zinc-300"
+								onClick={handleToggleLike}
+								disabled={likeSubmitting}
+								aria-pressed={liked}
 							>
-								<Heart className={liked ? "h-4 w-4 text-red-400" : "h-4 w-4"} />
+								<Heart
+									className={`h-4 w-4 ${liked ? "text-red-400" : "text-zinc-300"}`}
+									fill={liked ? "currentColor" : "none"}
+								/>
 							</Button>
 
 							<Button
 								variant="secondary"
-								className="border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300"
+								className="border border-zinc-800 bg-zinc-900 hover:bg-zinc-900 text-zinc-300"
 								onClick={() => setShareOpen(true)}
 							>
 								<Share2 className="h-4 w-4" />
@@ -293,7 +326,7 @@ export default function MoviewDetailClient({ movieId }: { movieId: string }) {
 					<div className="mt-4">
 						<RecommendsRow
 							items={recommends}
-							onSelect={(id) => setCurrentMovieId(id)}
+							onSelect={(id) => router.push(`/movies/detail/${id}`)}
 						/>
 					</div>
 				</section>

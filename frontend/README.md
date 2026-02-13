@@ -30,7 +30,7 @@ npm run lint:fix
 npm run format
 npm run build
   - 설정 완료
-
+  
   ## github&gitlab 동시 연결
 
   git push origin dev && git push gitlab dev

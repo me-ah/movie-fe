@@ -1,9 +1,11 @@
+import axios from "axios";
 import api from "@/lib/apiClient";
 
 export type ReviewItem = {
 	id: string | number;
 	author: string;
 	rating?: number;
+	user?: string;
 	content: string;
 	createdAt?: string;
 };
@@ -11,7 +13,7 @@ export type ReviewItem = {
 export type BackendReview = {
 	id?: string | number;
 	author?: string;
-	username?: string;
+	rname?: string;
 	user?: string;
 	rating?: number;
 	content?: string;
@@ -22,7 +24,8 @@ export type BackendReview = {
 function toReviewItem(r: BackendReview): ReviewItem {
 	return {
 		id: r.id ?? crypto.randomUUID(),
-		author: r.author ?? r.username ?? r.user ?? "익명",
+		author: r.author ?? "익명",
+		user: r.user,
 		rating: r.rating ?? undefined,
 		content: (r.content ?? "").toString(),
 		createdAt: r.created_at ?? r.createdAt ?? undefined,
@@ -55,10 +58,18 @@ export async function createMovieReview(
 	movieId: string | number,
 	payload: CreateReviewPayload,
 ): Promise<ReviewItem> {
-	const res = await api.post<BackendReview>("/home/review/", {
-		id: Number(movieId),
-		...payload,
-	});
+	try {
+		const res = await api.post<BackendReview>("/home/review/", {
+			movie_id: Number(movieId),
+			...payload,
+		});
 
-	return toReviewItem(res.data);
+		return toReviewItem(res.data);
+	} catch (error) {
+		if (axios.isAxiosError(error)) {
+			throw error.response?.data;
+		}
+
+		throw error;
+	}
 }

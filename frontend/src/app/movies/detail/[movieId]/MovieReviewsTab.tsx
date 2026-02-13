@@ -2,18 +2,14 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
-import { createMovieReview, getMovieReviews } from "@/api/movie_reviews";
+import {
+	createMovieReview,
+	getMovieReviews,
+	type ReviewItem,
+} from "@/api/movie_reviews";
 import { Button } from "@/components/ui/button";
 
 import MovieReviewCreateDialog from "./MovieReviewCreateDialog";
-
-export type ReviewItem = {
-	id: string | number;
-	author: string;
-	rating?: number;
-	content: string;
-	createdAt?: string;
-};
 
 type CreateReviewPayload = {
 	rating?: number;
@@ -93,8 +89,7 @@ export default function MovieReviewsTab({
 			setOpen(false);
 			await refetchReviews();
 		} catch (e) {
-			console.error("create review failed", e);
-			throw e;
+			throw e.error;
 		} finally {
 			setSubmitting(false);
 		}
@@ -136,9 +131,7 @@ export default function MovieReviewsTab({
 						className="rounded-2xl border border-zinc-800 bg-zinc-950/30 p-4"
 					>
 						<div className="flex items-center justify-between">
-							<div className="text-sm font-medium text-zinc-100">
-								{r.author}
-							</div>
+							<div className="text-sm font-medium text-zinc-100">{r.user}</div>
 							<div className="text-xs text-zinc-400">
 								{r.createdAt
 									? new Date(r.createdAt).toLocaleDateString("ko-KR")

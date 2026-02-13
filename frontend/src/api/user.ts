@@ -10,9 +10,9 @@ export type MeResponse = {
 };
 
 export type UpdateMePayload = {
-	firstname: string;
-	lastname: string;
-	useremail: string;
+	first_name: string;
+	last_name: string;
+	email: string;
 };
 
 export type BackendMyPageResponse = {
@@ -23,6 +23,7 @@ export type BackendMyPageResponse = {
 		firstname: string;
 		lastname: string;
 	};
+	login_type: string;
 	watchtime: string | number;
 	usermylist: string | number;
 
@@ -50,7 +51,7 @@ export async function getMyPage(payload: GetMyPagePayload) {
 }
 
 export async function patchMe(payload: UpdateMePayload) {
-	const res = await api.patch("/accounts/proflie/", payload);
+	const res = await api.patch("/accounts/profile/", payload);
 	return res.data;
 }
 

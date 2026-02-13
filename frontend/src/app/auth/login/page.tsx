@@ -27,11 +27,10 @@ export default function Login() {
 			setError(null);
 
 			const user_data = await login(username, password);
-			console.log(user_data);
-			const isOnboding = user_data.onboding;
+			const isOnboding = user_data.user.onboarding;
 
 			if (isOnboding) {
-				router.push("/");
+				router.push("/home");
 			} else {
 				router.push("/auth/onboarding");
 			}
