@@ -30,7 +30,13 @@ export default function ShortsPage() {
 		try {
 			const response = await fetchShorts(cursor); //
 
-			setShortsList((prev) => [...prev, ...response.results]);
+			setShortsList((prev) => {
+				const newItems = response.results.filter(
+					(newItem) =>
+						!prev.some((existing) => existing.movie_id === newItem.movie_id),
+				);
+				return [...prev, ...newItems];
+			});
 			setCursor(response.next_cursor);
 		} catch (error) {
 			console.error("영상 로드 실패:", error);
@@ -43,13 +49,12 @@ export default function ShortsPage() {
 		if (inView && (cursor !== null || shortsList.length === 0)) {
 			loadMoreShorts();
 		}
-		console.log("trigger");
 	}, [inView, cursor, shortsList.length, loadMoreShorts]);
 
 	return (
 		<main className="relative h-screen overflow-y-scroll snap-y snap-mandatory bg-black scrollbar-hide">
-			{shortsList.map((movie) => (
-				<ShortsItem key={movie.movie_id} movie={movie} />
+			{shortsList.map((movie, index) => (
+				<ShortsItem key={`${movie.movie_id}-${index}`} movie={movie} />
 			))}
 
 			<div

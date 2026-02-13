@@ -8,13 +8,13 @@ export const useWatchHistory = (movieId: string) => {
 		startTimeRef.current = Date.now();
 	}, []);
 
-	const stopTracking = useCallback(() => {
+	const stopTracking = useCallback(async () => {
 		if (startTimeRef.current) {
 			const durationMs = Date.now() - startTimeRef.current;
 
 			const watchTime = Math.round(durationMs / 1000);
 
-			sendWatchHistory(movieId, watchTime);
+			await sendWatchHistory(movieId, watchTime);
 
 			startTimeRef.current = null;
 		}

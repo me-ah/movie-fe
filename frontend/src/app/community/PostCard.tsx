@@ -129,7 +129,10 @@ export default function PostCard({ post }: { post: BackendReviewItem }) {
 					<div className="flex-1">
 						<div className="flex items-center justify-between gap-4">
 							<div>
-								<div className="font-semibold">{localPost.user.last_name}{localPost.user.first_name}</div>
+								<div className="font-semibold">
+									{localPost.user.last_name}
+									{localPost.user.first_name}
+								</div>
 							</div>
 							<div className="text-sm text-zinc-500">
 								{new Date(localPost.created_at).toLocaleString("ko-KR", {

@@ -1,5 +1,4 @@
 import api from "@/lib/apiClient";
-import { apiClient } from "./shortsMovie";
 
 export type MovieDetail = {
 	overview?: string;
@@ -76,9 +75,8 @@ export const movieApi = {
 	getMoviePage,
 };
 
-
 export async function toggleShortLike(
-  movie_id: string | number
+	movie_id: string | number,
 ): Promise<void> {
-  await api.post(`/movies/shorts/${movie_id}/like/`);
+	await api.post(`/movies/shorts/${movie_id}/like/`);
 }

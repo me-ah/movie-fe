@@ -1,12 +1,14 @@
 "use client";
 import { AnimatePresence, motion } from "framer-motion";
 import { useAtom, useSetAtom, type WritableAtom } from "jotai";
-import { Heart, MessageCircle, Play, Share2 } from "lucide-react";
+import { Heart, MessageCircle, Play, Share2 } from "lucide-react"; // Play 아이콘 추가
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useInView } from "react-intersection-observer";
 import YouTube, { type YouTubePlayer, type YouTubeProps } from "react-youtube";
 import type { ShortsMovie } from "@/api/shortsMovie";
+import { postLike } from "@/api/shortsMovie";
 import {
 	activeMovieAtom,
 	isCommentOpenAtom,
@@ -67,22 +69,31 @@ export default function ShortsItem({ movie }: { movie: ShortsMovie }) {
 
 		if (!player || !isReady || typeof player.playVideo !== "function") return;
 
-		try {
-			if (isVisible) {
-				setActiveMovie(movie);
-				startTracking();
-				player.playVideo();
-			} else {
-				stopTracking();
-				player.pauseVideo();
-				player.seekTo(0, true);
+		const handleVisibility = async () => {
+			try {
+				if (isVisible) {
+					setActiveMovie(movie);
+					startTracking();
+					player.playVideo();
+				} else {
+					await stopTracking();
+					if (typeof player.pauseVideo === "function") {
+						player.pauseVideo();
+						player.seekTo(0, true);
+					}
+				}
+			} catch (error) {
+				console.warn("YouTube Player Interaction Error:", error);
 			}
-		} catch (error) {
-			console.warn("YouTube Player Interaction Error:", error);
-		}
+		};
 
-		return () => stopTracking();
+		handleVisibility();
+
+		return () => {
+			stopTracking();
+		};
 	}, [isVisible, isReady, movie, startTracking, stopTracking, setActiveMovie]);
+
 	useEffect(() => {
 		let interval: NodeJS.Timeout;
 		const player = playerRef.current;
@@ -137,7 +148,7 @@ export default function ShortsItem({ movie }: { movie: ShortsMovie }) {
 		},
 	};
 
-	const toggleLike = () => {
+	const toggleLike = async () => {
 		setShortsList((prevList) =>
 			prevList.map((item) =>
 				item.movie_id === movie.movie_id
@@ -151,6 +162,11 @@ export default function ShortsItem({ movie }: { movie: ShortsMovie }) {
 					: item,
 			),
 		);
+		try {
+			await postLike(movie.movie_id);
+		} catch (error) {
+			console.error("좋아요 전송 실패:", error);
+		}
 	};
 
 	return (
@@ -201,7 +217,6 @@ export default function ShortsItem({ movie }: { movie: ShortsMovie }) {
 					)}
 				</div>
 
-				{/* 포스터 및 로딩 오버레이 */}
 				<AnimatePresence>
 					{(!videoStarted || !isVisible) && movie?.youtube_key && (
 						<motion.div
@@ -222,25 +237,40 @@ export default function ShortsItem({ movie }: { movie: ShortsMovie }) {
 					)}
 				</AnimatePresence>
 
-				<div className="absolute bottom-0 left-0 w-full h-1 bg-white/20 z-20">
-					<div
-						className="h-full bg-red-600 transition-all duration-300"
-						style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
+				<div className="absolute bottom-0 left-0 w-full h-[3px] group/bar z-30 transition-all hover:h-[4px]">
+					{/* 실제 조작을 담당하는 투명한 input */}
+					<input
+						type="range"
+						min="0"
+						max={duration}
+						step="0.1"
+						value={currentTime}
+						onChange={_handleSeek}
+						className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10 accent-red-600"
 					/>
+
+					{/* 배경 바 */}
+					<div className="absolute inset-0 bg-white/15" />
+
+					{/* 붉은색 진행 바 */}
+					<div
+						className="absolute inset-y-0 left-0 bg-red-600 pointer-events-none transition-all duration-100"
+						style={{ width: `${(currentTime / (duration || 1)) * 100}%` }}
+					>
+						{/* 마우스 호버 시 나타나는 동그란 조절 점(선택 사항) */}
+						<div className="absolute right-0 top-1/2 -translate-y-1/2 w-3 h-3 bg-red-600 rounded-full scale-0 group-hover/bar:scale-100 transition-transform shadow-lg" />
+					</div>
 				</div>
 
 				<div className="absolute bottom-0 left-0 w-full p-5 pb-8 bg-gradient-to-t from-black/80 to-transparent pointer-events-none z-20">
 					<div className="flex items-center gap-2 mb-3 pointer-events-auto">
-						<div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center font-bold text-white text-[10px]">
-							M
-						</div>
 						<span className="font-bold text-white text-sm">{movie.title}</span>
-						<button
-							type="button"
-							className="bg-white text-black px-3 py-1 rounded-full text-[10px] font-bold ml-2"
+						<Link
+							href={`/movies/detail/${movie.movie_id}`}
+							className="pointer-events-auto bg-white text-black px-3 py-1 rounded-full text-[10px] font-bold ml-2 hover:bg-gray-200 transition-colors inline-block"
 						>
-							구독
-						</button>
+							상세보기
+						</Link>
 					</div>
 					<p className="text-xs text-white/90 line-clamp-2 pr-4 pointer-events-auto">
 						{movie.overview}
@@ -280,7 +310,7 @@ export default function ShortsItem({ movie }: { movie: ShortsMovie }) {
 						<MessageCircle size={24} />
 					</div>
 					<span className="text-xs mt-1 text-white font-medium">
-						{movie.view_count}
+						{movie.comment_count}
 					</span>
 				</button>
 

@@ -8,6 +8,7 @@ import {
 	activeMovieAtom,
 	commentsAtom,
 	isCommentOpenAtom,
+	shortsListAtom,
 } from "@/atoms/setAtoms";
 import { Button } from "@/components/ui/button";
 import { getAccessToken } from "@/lib/tokenStorage";
@@ -16,6 +17,7 @@ export default function CommentPanel() {
 	const [isOpen, setIsOpen] = useAtom(isCommentOpenAtom);
 	const [movie] = useAtom(activeMovieAtom);
 	const [comments, setComments] = useAtom(commentsAtom);
+	const [, setShortsList] = useAtom(shortsListAtom);
 	const [newComment, setNewComment] = useState("");
 	const [isLoading, setIsLoading] = useState(false);
 	const listRef = useRef<HTMLDivElement>(null);
@@ -26,14 +28,12 @@ export default function CommentPanel() {
 		}
 		setIsLoading(true);
 		try {
-			console.log("댓글 API 요청 시작...");
 			const data = await fetchComments(movie.movie_id);
 			setComments(data.comments);
 		} catch (error) {
 			console.error("댓글 로드 실패:", error);
 		} finally {
 			setIsLoading(false);
-			console.log("댓글 로딩 완료");
 		}
 	}, [movie?.movie_id, setComments]);
 
@@ -48,22 +48,24 @@ export default function CommentPanel() {
 	}, [isOpen, movie?.movie_id, loadComments]);
 
 	const handleAddComment = async () => {
-		console.log("등록 시도 데이터:", {
-			isLoggedIn,
-			text: !!newComment.trim(),
-			movieId: movie?.movie_id,
-		});
-
 		if (!isLoggedIn || !newComment.trim() || !movie?.movie_id) {
-			console.warn("필수 정보가 부족하여 등록을 취소합니다.");
 			return;
 		}
-		if (!isLoggedIn || !newComment.trim() || !movie?.movie_id) return;
 
 		try {
 			const response = await createComment(movie.movie_id, newComment);
 			const { message, ...newCommentData } = response;
-			setComments((prev) => [newCommentData, ...prev]);
+			// 서버에서 생성된 새 댓글 객체를 리스트 맨 앞에 추가
+			setComments((prev) =>
+				Array.isArray(prev) ? [newCommentData, ...prev] : [newCommentData],
+			);
+			setShortsList((prevList) =>
+				prevList.map((item) =>
+					item.movie_id === movie.movie_id
+						? { ...item, comment_count: (item.comment_count || 0) + 1 }
+						: item,
+				),
+			);
 			setNewComment("");
 			listRef.current?.scrollTo({ top: 0, behavior: "smooth" });
 		} catch (_error) {
@@ -76,6 +78,16 @@ export default function CommentPanel() {
 		try {
 			await deleteComment(movie.movie_id, commentId);
 			setComments((prev) => prev.filter((c) => c.comment_id !== commentId));
+			setShortsList((prevList) =>
+				prevList.map((item) =>
+					item.movie_id === movie.movie_id
+						? {
+								...item,
+								comment_count: Math.max(0, (item.comment_count || 0) - 1),
+							}
+						: item,
+				),
+			);
 		} catch (_error) {
 			alert("삭제 실패");
 		}
