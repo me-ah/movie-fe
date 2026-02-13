@@ -128,11 +128,11 @@ class MyPageView(views.APIView):
             record_movies_qs = UserMovieHistory.objects.filter(user=user).select_related('movie').order_by('-watched_at')[:10]
             recordmovie = {}
             for history in record_movies_qs:
-                recordmovie[str(history.movie.id)] = {"recordmovie_name": history.movie.title, "recordmovie_poster": history.movie.poster_path}
+                recordmovie[str(history.movie.movie_id)] = {"recordmovie_name": history.movie.title, "recordmovie_poster": history.movie.poster_path}
             mylist_movies_qs = UserMyList.objects.filter(user=user).select_related('movie').order_by('-created_at')[:10]
             mylistmovie = {}
             for item in mylist_movies_qs:
-                mylistmovie[str(item.movie.id)] = {"mylistmovie_name": item.movie.title, "mylistmovie_poster": item.movie.poster_path}
+                mylistmovie[str(item.movie.movie_id)] = {"mylistmovie_name": item.movie.title, "mylistmovie_poster": item.movie.poster_path}
             return Response({"userdata": userdata, "watchtime": str(watchtime_sum), "usermylist": str(usermylist_count), "recordmovie": recordmovie, "mylistmovie": mylistmovie}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({"error": "SERVER_ERROR", "message": f"데이터 조회 중 서버 에러가 발생했습니둥: {str(e)}"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
