@@ -19,13 +19,10 @@ export default function ShareModal() {
 		return () => window.removeEventListener("keydown", handleEsc);
 	}, [setIsOpen]);
 
-	if (!isOpen || !mounted) return null;
-
+	if (!mounted) return null;
+	const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
 	const moviePath = movie?.movie_id || "";
-	const shareUrl =
-		typeof window !== "undefined"
-			? `${window.location.origin}/short/${moviePath}`
-			: "";
+	const shareUrl = `${baseUrl}/movies/detail/${moviePath}`;
 
 	const copyLink = async () => {
 		if (!moviePath) {
