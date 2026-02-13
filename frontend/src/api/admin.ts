@@ -230,3 +230,30 @@ export async function getAdminMovieDetail(id: number) {
 	const res = await api.get<AdminMovieDetail>(`/admin/movies/${id}`);
 	return res.data;
 }
+
+export type UpdateAdminMovieParams = {
+	movie_id?: string;
+	title?: string;
+	youtube_key?: string;
+	embed_url?: string;
+	release_date?: string;
+	vote_average?: number;
+	star_rating?: number;
+	review_average?: number;
+	ott_providers?: string;
+	is_in_theaters?: boolean;
+	overview?: string;
+	poster_path?: string;
+	view_count?: number;
+	like_count?: number;
+	genres?: number[];
+	[key: string]: unknown;
+};
+
+export async function updateAdminMovie(
+	id: number,
+	data: UpdateAdminMovieParams,
+) {
+	const res = await api.patch<AdminMovieDetail>(`/admin/movies/${id}/`, data);
+	return res.data;
+}
