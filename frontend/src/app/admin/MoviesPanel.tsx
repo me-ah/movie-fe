@@ -4,9 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import { type AdminMovieItem, getAdminMovieList } from "@/api/admin";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 
 export default function MoviesPanel() {
 	const [page, setPage] = useState(1);
+	const [pageSize, setPageSize] = useState(10);
+	const [search, setSearch] = useState("");
+	const [searchInput, setSearchInput] = useState("");
 
 	const [movies, setMovies] = useState<AdminMovieItem[]>([]);
 	const [count, setCount] = useState(0);
@@ -23,7 +27,11 @@ export default function MoviesPanel() {
 			setLoading(true);
 			setErr(null);
 			try {
-				const data = await getAdminMovieList({ page });
+				const data = await getAdminMovieList({
+					page,
+					page_size: pageSize,
+					search,
+				});
 				if (!mounted) return;
 
 				setMovies(Array.isArray(data.results) ? data.results : []);
@@ -44,14 +52,11 @@ export default function MoviesPanel() {
 		return () => {
 			mounted = false;
 		};
-	}, [page]);
+	}, [page, pageSize, search]);
 
 	const totalPages = useMemo(() => {
-		// 서버에서 page_size를 안 주는 경우가 많아서, 우선 "next/previous"로 이동을 제어
-		// totalPages는 참고용으로만 표시 (정확하지 않을 수 있음)
-		const guessedPageSize = movies.length || 10;
-		return Math.max(1, Math.ceil(count / guessedPageSize));
-	}, [count, movies.length]);
+		return Math.max(1, Math.ceil(count / pageSize));
+	}, [count, pageSize]);
 
 	const formatDate = (iso?: string) => {
 		if (!iso) return "-";
@@ -92,7 +97,43 @@ export default function MoviesPanel() {
 						</div>
 
 						<div className="flex items-center gap-2">
-							<Button className="bg-blue-500 hover:bg-blue-600">
+							<select
+								className="h-9 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-1 text-sm text-zinc-200 focus:outline-none focus:ring-2 focus:ring-blue-600"
+								value={pageSize}
+								onChange={(e) => {
+									setPageSize(Number(e.target.value));
+									setPage(1);
+								}}
+							>
+								<option value={10}>10개씩</option>
+								<option value={20}>20개씩</option>
+								<option value={50}>50개씩</option>
+							</select>
+							<div className="flex items-center gap-1">
+								<Input
+									placeholder="영화 제목 검색..."
+									value={searchInput}
+									onChange={(e) => setSearchInput(e.target.value)}
+									onKeyDown={(e) => {
+										if (e.key === "Enter") {
+											setPage(1);
+											setSearch(searchInput);
+										}
+									}}
+									className="h-9 w-48 bg-zinc-950 text-sm text-zinc-200"
+								/>
+								<Button
+									variant="secondary"
+									className="h-9 border border-zinc-800 bg-zinc-900 text-zinc-200 hover:bg-zinc-800"
+									onClick={() => {
+										setPage(1);
+										setSearch(searchInput);
+									}}
+								>
+									검색
+								</Button>
+							</div>
+							<Button className="h-9 bg-blue-500 hover:bg-blue-600">
 								영화 추가
 							</Button>
 						</div>

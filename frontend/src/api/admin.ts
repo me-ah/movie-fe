@@ -88,6 +88,7 @@ export type AdminMovieListResponse = {
 
 export type AdminMovieListParams = {
 	page?: number;
+	page_size?: number;
 	search?: string;
 	genre?: string;
 	year?: number | string;
@@ -97,7 +98,7 @@ export type AdminMovieListParams = {
 };
 
 export async function getAdminMovieList(params?: AdminMovieListParams) {
-	const res = await api.get<AdminMovieListResponse>("/api/admin/movie/list", {
+	const res = await api.get<AdminMovieListResponse>("/admin/movies", {
 		params,
 	});
 	return res.data;
