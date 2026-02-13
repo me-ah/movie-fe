@@ -13,7 +13,8 @@ from .serializers import (
     MovieDetailResponseSerializer,
     MovieMiniSerializer,
     ReviewSerializer,
-    ReviewCreateSerializer
+    ReviewCreateSerializer,
+    ReviewCreateRequestSerializer
 )
 
 def update_movie_review_average(movie):
@@ -69,7 +70,7 @@ class SubView(views.APIView):
 
 class MovieDetailView(views.APIView):
     """
-    영화 상세 정보 API (GET) - TMDB ID 기반
+    영화 상세 정보 API (GET)
     """
     permission_classes = [AllowAny]
     serializer_class = MovieDetailResponseSerializer
@@ -81,7 +82,7 @@ class MovieDetailView(views.APIView):
     def get(self, request):
         tmdb_id = request.query_params.get('id')
         if not tmdb_id:
-            return Response({"error": "Movie TMDB ID required"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Movie ID required"}, status=status.HTTP_400_BAD_REQUEST)
         
         movie = get_object_or_404(Movie, movie_id=tmdb_id)
         
@@ -121,13 +122,33 @@ class MovieDetailView(views.APIView):
 
 class MovieReviewListView(views.APIView):
     """
-    영화 리뷰 작성 API (POST) - 바디에 movie_id(TMDB ID) 포함
+    영화 리뷰 목록 조회(GET) 및 작성(POST)
     """
-    permission_classes = [IsAuthenticated]
-    serializer_class = ReviewCreateSerializer
+    serializer_class = ReviewCreateRequestSerializer
 
-    @extend_schema(request=ReviewCreateSerializer)
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated()]
+
+    @extend_schema(
+        parameters=[OpenApiParameter("id", type=str, description="영화의 고유 TMDB ID", required=True)],
+        responses={200: ReviewSerializer(many=True)}
+    )
+    def get(self, request):
+        """특정 영화의 모든 리뷰 목록 조회"""
+        tmdb_id = request.query_params.get('id')
+        if not tmdb_id:
+            return Response({"error": "Movie ID required (?id=tt12345)"}, status=status.HTTP_400_BAD_REQUEST)
+        
+        movie = get_object_or_404(Movie, movie_id=tmdb_id)
+        reviews = movie.reviews.all().select_related('author').order_by('-created_at')
+        serializer = ReviewSerializer(reviews, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    @extend_schema(request=ReviewCreateRequestSerializer, responses={201: ReviewSerializer})
     def post(self, request):
+        """영화 리뷰 작성"""
         tmdb_id = request.data.get('movie_id')
         if not tmdb_id:
             return Response({"error": "movie_id (TMDB ID) is required in body"}, status=status.HTTP_400_BAD_REQUEST)
