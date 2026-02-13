@@ -14,7 +14,6 @@ class MovieShortsSerializer(serializers.ModelSerializer):
     """Shorts API 응답용 Serializer"""
     genres = GenreSerializer(many=True, read_only=True)
     is_liked = serializers.SerializerMethodField()
-    comment_count = serializers.IntegerField(read_only=True)
 
     class Meta:
         model = Movie
@@ -32,7 +31,6 @@ class MovieShortsSerializer(serializers.ModelSerializer):
             'overview',
             'poster_path',
             'view_count',
-            'comment_count',
             'like_count',
             'is_liked',
         ]
@@ -47,7 +45,7 @@ class MovieShortsSerializer(serializers.ModelSerializer):
 
 # 스웨거 문서용 래퍼
 class ShortsResponseSerializer(serializers.Serializer):
-    next_cursor = serializers.IntegerField(help_text="다음 페이지 조회를 위한 인덱스 커서 (로그인 유저는 0, 10, 20... 형식)")
+    next_cursor = serializers.IntegerField(help_text="다음 페이지 조회를 위한 인덱스 커서")
     results = MovieShortsSerializer(many=True)
 
 class ShortsDetailResponseSerializer(serializers.Serializer):
@@ -63,10 +61,16 @@ class CommentCreateSerializer(serializers.Serializer):
 
 
 class CommentResponseSerializer(serializers.ModelSerializer):
-    """댓글 응답용"""
+    """댓글 응답용 (작성자 이름 통합 추가)"""
     comment_id = serializers.IntegerField(source='id')
     user_name = serializers.CharField(source='user.username')
+    name = serializers.SerializerMethodField()
 
     class Meta:
         model = Comment
-        fields = ['comment_id', 'user_name', 'content', 'created_at']
+        fields = ['comment_id', 'user_name', 'name', 'content', 'created_at']
+
+    def get_name(self, obj):
+        # last_name + first_name 조합
+        full_name = f"{obj.user.last_name}{obj.user.first_name}".strip()
+        return full_name if full_name else obj.user.username
