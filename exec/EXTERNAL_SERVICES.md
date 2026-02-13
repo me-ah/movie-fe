@@ -1,0 +1,24 @@
+# 외부 서비스 가입 및 활용 정보
+
+MEAH 프로젝트에서 사용되는 외부 서비스들의 계정 정보 및 설정 내역입니다.
+
+## 1. TMDB (The Movie Database)
+- **용도:** 영화 기본 정보(제목, 줄거리, 포스터, 장르 등) 수집
+- **가입 정보:** 개별 개발자 계정 사용
+- **활용 정보:** 프로젝트 내 `load_movies` 매니지먼트 명령어를 통해 데이터 로드 시 활용
+
+## 2. Kakao Developers (소셜 로그인)
+- **용도:** 카카오 계정을 이용한 간편 가입 및 로그인
+- **설정값:**
+  - REST API 키: 85937b0b11cf339cbae9b95cb8d9dd6a
+  - Redirect URI: `https://movie-fe-iota.vercel.app/api/kakao/callback`
+
+## 3. Google Cloud Console (소셜 로그인)
+- **용도:** 구글 계정을 이용한 간편 가입 및 로그인
+- **클라이언트 ID:** 1089177366280-c759fqjjf0j1a1rnq3vpobu0jfup3tmk.apps.googleusercontent.com
+- **설정값:**
+  - Redirect URI: `https://movie-fe-iota.vercel.app/api/google/callback`
+
+## 4. Docker Hub
+- **용도:** 백엔드 이미지 배포 및 관리
+- **계정:** py9245 (개인 저장소 사용)
