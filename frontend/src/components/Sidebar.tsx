@@ -1,6 +1,6 @@
 "use client";
 
-import { Film, Home, SquarePlay, User, Users } from "lucide-react";
+import { Film, Home, SquarePlay, User, Users, Shield  } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,11 @@ const items = [
 ];
 
 const footerItems = [
+	{
+		title: "관리자",
+		url: "/admin",
+		icon: Shield,
+	},
 	{
 		title: "마이",
 		url: "/auth/mypage",
