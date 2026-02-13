@@ -46,7 +46,6 @@ export default function MovieReviewsTab({
 			return;
 		}
 		const data = await getMovieReviews(normalizedMovieId);
-		console.log(data);
 		setReviews(data);
 	}
 
