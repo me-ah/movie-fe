@@ -204,3 +204,29 @@ export async function updateAdminUser(id: number, data: UpdateAdminUserParams) {
 export async function deleteAdminUser(id: number) {
 	await api.delete(`/admin/accounts/${id}/`);
 }
+
+export type AdminMovieDetail = {
+	id: number;
+	movie_id: string;
+	title: string;
+	youtube_key: string;
+	embed_url: string;
+	release_date: string;
+	vote_average: number;
+	star_rating: number;
+	review_average: number;
+	ott_providers: string;
+	is_in_theaters: boolean;
+	overview: string;
+	poster_path: string;
+	view_count: number;
+	like_count: number;
+	updated_at: string;
+	created_at: string;
+	genres: number[];
+};
+
+export async function getAdminMovieDetail(id: number) {
+	const res = await api.get<AdminMovieDetail>(`/admin/movies/${id}`);
+	return res.data;
+}

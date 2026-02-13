@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { type AdminMovieItem, getAdminMovieList } from "@/api/admin";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
 export default function MoviesPanel() {
+	const router = useRouter();
 	const [page, setPage] = useState(1);
 	const [pageSize, setPageSize] = useState(10);
 	const [search, setSearch] = useState("");
@@ -191,13 +193,16 @@ export default function MoviesPanel() {
 								movies.map((m, idx) => (
 									<tr
 										key={String(m.id)}
-										className="border-t border-zinc-800/80 hover:bg-zinc-950/30"
+										className="border-t border-zinc-800/80 hover:bg-zinc-950/30 cursor-pointer transition-colors"
+										onClick={() => router.push(`/admin/movies/${m.id}`)}
 									>
 										<td className="px-6 py-4 text-sm text-zinc-200">
 											{(page - 1) * movies.length + idx + 1}
 										</td>
 										<td className="px-6 py-4 text-sm text-zinc-200">
-											<div className="max-w-[260px] truncate">{titleOf(m)}</div>
+											<div className="max-w-[260px] truncate underline decoration-zinc-600 underline-offset-4">
+												{titleOf(m)}
+											</div>
 										</td>
 										<td className="px-6 py-4 text-sm text-zinc-300">
 											{formatDate(m.release_date)}
